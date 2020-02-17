@@ -20,14 +20,8 @@ include_directories(/orion/u/jingweih/3rd/eigen3/)
 
 include_directories(/Users/jingwei/Desktop/project/libigl/include)
 
-set(
-    deform_SRC
-    src/deform.cpp
-)
-
-add_executable(
-    deform
-    src/main.cc
+add_library(
+	deform SHARED
     src/deform.cc
     src/deform.h
     src/mesh.cc
@@ -41,6 +35,28 @@ add_executable(
 )
 
 target_link_libraries(
+	deform
+	${CERES_LIBRARIES}
+)
+
+add_executable(
+    rigid_deform
+    src/rigid_deform.cc
+)
+
+target_link_libraries(
+    rigid_deform
+    deform
+    ${CERES_LIBRARIES}
+)
+
+add_executable(
+    rigid_rot_deform
+    src/rigid_rot_deform.cc
+)
+
+target_link_libraries(
+    rigid_rot_deform
     deform
     ${CERES_LIBRARIES}
 )
