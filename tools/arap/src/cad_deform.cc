@@ -24,9 +24,13 @@ int main(int argc, char** argv) {
 	cad.ReadOBJ(argv[3]);
 
 	Subdivision sub;
-	sub.Subdivide(cad, 2e-2);
+	sub.Subdivide(cad, 3e-2);
 	sub.subdivide_mesh.WriteOBJ("debug.obj");
-	exit(0);
+
+	//std::vector<std::pair<int, int> > neighbors;
+	sub.ComputeGeometryNeighbors(1e-2);
+
+	return 0;
 	//MeshCover shell;
 	//shell.Cover(src, cad);
 
@@ -34,15 +38,15 @@ int main(int argc, char** argv) {
 
 	//src = shell.cover;
 	//return 0;
-	if (argc > 4)
-		sscanf(argv[4], "%d", &GRID_RESOLUTION);
-
 	if (argc > 5)
-		sscanf(argv[5], "%d", &MESH_RESOLUTION);
+		sscanf(argv[5], "%d", &GRID_RESOLUTION);
+
+	if (argc > 6)
+		sscanf(argv[6], "%d", &MESH_RESOLUTION);
 
 	FT lambda = 1;
-	if (argc > 6)
-		sscanf(argv[6], "%lf", &lambda);
+	if (argc > 7)
+		sscanf(argv[7], "%lf", &lambda);
 	printf("lambda %lf\n", lambda);
 	//Get number of vertices and faces
 	std::cout<<"Source:\t\t"<<"Num vertices: "<<src.V.size()<<"\tNum faces: "<<src.F.size()<<std::endl;
@@ -54,7 +58,7 @@ int main(int argc, char** argv) {
 
 	ref.ConstructDistanceField(grid);
 	//src.HierarchicalDeform(grid);
-	DeformWithRot(src, grid, lambda);
+	Deform(src, grid, lambda);
 
 	std::cout<<"Deformed"<<std::endl;
 
