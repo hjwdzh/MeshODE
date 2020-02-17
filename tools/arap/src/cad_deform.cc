@@ -3,6 +3,7 @@
 #include "deform.h"
 #include "mesh.h"
 #include "meshcover.h"
+#include "subdivision.h"
 #include "uniformgrid.h"
 
 // flags
@@ -20,8 +21,12 @@ int main(int argc, char** argv) {
 	Mesh src, ref, cad;
 	src.ReadOBJ(argv[1]);
 	ref.ReadOBJ(argv[2]);
-	//cad.ReadOBJ(argv[3]);
+	cad.ReadOBJ(argv[3]);
 
+	Subdivision sub;
+	sub.Subdivide(cad, 2e-2);
+	sub.subdivide_mesh.WriteOBJ("debug.obj");
+	exit(0);
 	//MeshCover shell;
 	//shell.Cover(src, cad);
 

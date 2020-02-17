@@ -1,5 +1,5 @@
-#ifndef ARAP_SUBDIVISION_H_
-#define ARAP_SUBDIVISION_H_
+#ifndef ARAP_MESHCOVER_H_
+#define ARAP_MESHCOVER_H_
 
 #include "mesh.h"
 

@@ -28,6 +28,8 @@ add_library(
     src/mesh.h
     src/meshcover.cc
     src/meshcover.h
+    src/subdivision.cc
+    src/subdivision.h
     src/uniformgrid.cc
     src/uniformgrid.h
     src/edgeloss.h
@@ -57,6 +59,17 @@ add_executable(
 
 target_link_libraries(
     rigid_rot_deform
+    deform
+    ${CERES_LIBRARIES}
+)
+
+add_executable(
+    cad_deform
+    src/cad_deform.cc
+)
+
+target_link_libraries(
+    cad_deform
     deform
     ${CERES_LIBRARIES}
 )

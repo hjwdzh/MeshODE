@@ -6,7 +6,6 @@ MeshCover::MeshCover()
 {}
 
 void MeshCover::Cover(const Mesh& watertight, const Mesh& cad) {
-	cover = watertight;
 
 	MatrixX V1(watertight.V.size(), 3), V2(cad.V.size(), 3);
 	Eigen::MatrixXi F2(cad.F.size(), 3);
@@ -25,7 +24,21 @@ void MeshCover::Cover(const Mesh& watertight, const Mesh& cad) {
 	MatrixX C;
 
 	igl::point_mesh_squared_distance(V1,V2,F2,sqrD,I,C);
+	cover = cad;
 
-	for (int i = 0; i < cover.V.size(); ++i)
-		cover.V[i] = C.row(i);
+	std::vector<int> visited(cover.F.size(), 0);
+	for (int i = 0; i < I.size(); ++i)
+		visited[I[i]] = 1;
+
+	int top = 0;
+	for (int i = 0; i < cover.F.size(); ++i) {
+		if (visited[i] == 1) {
+			cover.F[top++] = cover.F[i];
+		}
+	}
+	cover.F.resize(top);
+
+	printf("Interesting...\n");
+	cover.WriteOBJ("debug.obj", false);
+	exit(0);
 }
