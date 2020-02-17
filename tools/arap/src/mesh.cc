@@ -7,7 +7,7 @@
 #include <igl/point_mesh_squared_distance.h>
 
 Mesh::Mesh()
-	: scale(1.0)
+	: scale(1.0), pos(0, 0, 0)
 {}
 
 void Mesh::ReadOBJ(const char* filename) {

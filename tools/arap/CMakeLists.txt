@@ -32,6 +32,8 @@ add_executable(
     src/deform.h
     src/mesh.cc
     src/mesh.h
+    src/meshcover.cc
+    src/meshcover.h
     src/uniformgrid.cc
     src/uniformgrid.h
     src/edgeloss.h

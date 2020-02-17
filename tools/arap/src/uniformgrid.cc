@@ -52,6 +52,8 @@ T UniformGrid::distance(const T* const p) const {
 	T w7 = wx 		   * wy 		 * wz 		   * (T)distances[pz + 1][py + 1][px + 1];
 	T res = w0 + w1 + w2 + w3 + w4 + w5 + w6 + w7;
 
+	if (res > 0.2)
+		return T(0);
 	return res;
 }
 
