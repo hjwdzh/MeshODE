@@ -21,11 +21,11 @@ public:
 	std::vector<int> vertex_component;
 protected:
 	void DelaunaySubdivision(
-		std::unordered_set<int>& boundary_indices,
+		std::unordered_set<int>* boundary_indices,
 		std::vector<Vector3>& V,
 		std::vector<Eigen::Vector3i>& F,
 		Eigen::Vector3i& face,
-		double len_thres);
+		double len_thres, bool debug);
 	void SubdivideFaces(std::vector<Vector3>& V,
 		std::vector<Eigen::Vector3i>& F,
 		std::vector<int>& parent_faces,

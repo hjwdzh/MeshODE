@@ -118,3 +118,59 @@ void DeformWithRot(Mesh& mesh, UniformGrid& grid, FT lambda) {
 	FT final_cost = v_cost + edge_cost;
 	std::cout<<"Final cost: "<<final_cost<<std::endl;
 }
+
+void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda) {
+	auto& mesh = sub.subdivide_mesh;
+	auto& V = mesh.V;
+	auto& F = mesh.F;
+	
+	ceres::Problem problem;
+
+	//Move vertices
+	std::vector<ceres::ResidualBlockId> v_block_ids;
+	v_block_ids.reserve(V.size());
+	for (int i = 0; i < V.size(); ++i) {
+		ceres::CostFunction* cost_function = DistanceLoss::Create(&grid);
+		ceres::ResidualBlockId block_id = problem.AddResidualBlock(cost_function, 0, V[i].data());
+		v_block_ids.push_back(block_id);			
+	}
+
+	//Enforce rigidity
+	std::vector<ceres::ResidualBlockId> edge_block_ids;
+	edge_block_ids.reserve(3 * F.size());
+	edge_block_ids.reserve(sub.geometry_neighbor_pairs.size());
+	for (auto& p : sub.geometry_neighbor_pairs) {
+		int v1 = p.first;
+		int v2 = p.second;
+		Vector3 v = (V[v1] - V[v2]);
+		ceres::CostFunction* cost_function = EdgeLoss::Create(v, lambda);
+		ceres::ResidualBlockId block_id = problem.AddResidualBlock(cost_function, 0, V[v1].data(), V[v2].data());
+		edge_block_ids.push_back(block_id);
+	}
+
+	ceres::Solver::Options options;
+	options.max_num_iterations = 100;
+	options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+	options.minimizer_progress_to_stdout = true;
+	options.num_threads = 1;
+	ceres::Solver::Summary summary;
+	ceres::Solve(options, &problem, &summary);
+	std::cout << summary.FullReport() << "\n";
+
+	//V error
+	ceres::Problem::EvaluateOptions v_options;
+	v_options.residual_blocks = v_block_ids;
+	double v_cost;
+	problem.Evaluate(v_options, &v_cost, NULL, NULL, NULL);
+	std::cout<<"Vertices cost: "<<v_cost<<std::endl;
+
+	//E error
+	ceres::Problem::EvaluateOptions edge_options;
+	edge_options.residual_blocks = edge_block_ids;
+	FT edge_cost;
+	problem.Evaluate(edge_options, &edge_cost, NULL, NULL, NULL);
+	std::cout<<"Rigidity cost: "<<edge_cost<<std::endl;
+
+	FT final_cost = v_cost + edge_cost;
+	std::cout<<"Final cost: "<<final_cost<<std::endl;	
+}

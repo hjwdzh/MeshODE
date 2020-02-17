@@ -7,6 +7,6 @@
 
 void Deform(Mesh& mesh, UniformGrid& grid, FT lambda = 1);
 void DeformWithRot(Mesh& mesh, UniformGrid& grid, FT lambda = 1);
-//void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda = 1);
+void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda = 1);
 
 #endif

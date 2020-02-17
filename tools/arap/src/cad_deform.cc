@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 
 #include "deform.h"
@@ -25,10 +26,13 @@ int main(int argc, char** argv) {
 	cad.ReadOBJ(argv[3]);
 
 	Subdivision sub;
-	sub.Subdivide(cad, 3e-2);
+	sub.Subdivide(cad, 1e-2);
+	sub.subdivide_mesh.MergeDuplex();
+
+	sub.ComputeGeometryNeighbors(1.5e-2);
 
 	MeshCover cover;
-	cover.Cover(src, sub.subdivide_mesh);
+	cover.Cover(src, sub);
 
 	//sub.ComputeGeometryNeighbors(1e-2);
 	if (argc > 5)
@@ -53,12 +57,11 @@ int main(int argc, char** argv) {
 	//sub.subdivide_mesh.WriteOBJ("debug.obj");
 	//ref.WriteOBJ("debug1.obj");
 	//src.HierarchicalDeform(grid);
-	Deform(src, grid, lambda);
-
+	//Deform(src, grid, lambda);
+	DeformSubdivision(sub, grid, lambda);
 	std::cout<<"Deformed"<<std::endl;
 
-	cover.UpdateCover();
-	cover.cover.WriteOBJ(argv[4]);
-	//sub.subdivide_mesh.WriteOBJ(argv[4]);
+	//cover.UpdateCover(src, sub);
+	sub.subdivide_mesh.WriteOBJ(argv[4]);
 	return 0;
 }

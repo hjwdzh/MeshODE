@@ -1,17 +1,15 @@
 #ifndef ARAP_MESHCOVER_H_
 #define ARAP_MESHCOVER_H_
 
-#include "mesh.h"
+#include "subdivision.h"
 
 class MeshCover
 {
 public:
 	MeshCover();	
-	void Cover(const Mesh& watertight, Mesh& cad);
-	void UpdateCover();
-	const Mesh* watertight;
-	Mesh cover;
-
+	void Cover(Mesh& watertight, Subdivision& sub);
+	void UpdateCover(Mesh& watertight, Subdivision& sub);
+	
 	std::vector<int> findices;
 	std::vector<Vector3> weights;
 

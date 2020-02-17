@@ -6,11 +6,10 @@
 
 MeshCover::MeshCover()
 {
-	watertight = 0;
 }
 
-void MeshCover::Cover(const Mesh& watertight, Mesh& cad) {
-
+void MeshCover::Cover(Mesh& watertight, Subdivision& sub) {
+	auto& cad = sub.subdivide_mesh;
 	MatrixX V1(cad.V.size(), 3), V2(watertight.V.size(), 3);
 	Eigen::MatrixXi F2(watertight.F.size(), 3);
 
@@ -39,18 +38,13 @@ void MeshCover::Cover(const Mesh& watertight, Mesh& cad) {
 		findices.push_back(find);
 		weights.push_back(weight.row(0));
 	}
-	cover = cad;
-
-	this->watertight = &watertight;
 }
 
-void MeshCover::UpdateCover() {
-	if (!watertight)
-		return;
-
+void MeshCover::UpdateCover(Mesh& watertight, Subdivision& sub) {
 	// Linear Estimation
-	auto& V = cover.V;
-	auto& F = cover.F;
+	auto& V = sub.subdivide_mesh.V;
+	auto& F = sub.subdivide_mesh.F;
+
 	std::unordered_map<long long, FT> trips;
 	int num_entries = V.size();
 	MatrixX B = MatrixX::Zero(num_entries, 3);
@@ -67,28 +61,45 @@ void MeshCover::UpdateCover() {
 	};
 
 	for (int i = 0; i < findices.size(); ++i) {
-		auto& f = watertight->F[findices[i]];
-		const Vector3& v0 = watertight->V[f[0]];
-		const Vector3& v1 = watertight->V[f[1]];
-		const Vector3& v2 = watertight->V[f[2]];
+		auto& f = watertight.F[findices[i]];
+		const Vector3& v0 = watertight.V[f[0]];
+		const Vector3& v1 = watertight.V[f[1]];
+		const Vector3& v2 = watertight.V[f[2]];
+
 		Vector3 v = v0 * weights[i][0] + v1 * weights[i][1] + v2 * weights[i][2];
-		add_entry_A(i, i, 0.25);
+
+		add_entry_A(i, i, 1);
 		add_entry_B(i, v);
 	}
 
-	FT regular = 1;
+	FT regular = 0;
 	for (int i = 0; i < F.size(); ++i) {
 		for (int j = 0; j < 3; ++j) {
 			int v0 = F[i][j];
 			int v1 = F[i][(j + 1) % 3];
-			add_entry_A(v0, v0, regular);
-			add_entry_A(v0, v1, -regular);
-			add_entry_A(v1, v0, -regular);
-			add_entry_A(v1, v1, regular);
-			add_entry_B(v0, regular * (V[v0] - V[v1]));
-			add_entry_B(v1, regular * (V[v1] - V[v0]));
+
+			double reg = regular;
+			add_entry_A(v0, v0, reg);
+			add_entry_A(v0, v1, -reg);
+			add_entry_A(v1, v0, -reg);
+			add_entry_A(v1, v1, reg);
+			add_entry_B(v0, reg * (V[v0] - V[v1]));
+			add_entry_B(v1, reg * (V[v1] - V[v0]));
 		}
 	}
+
+	for (auto& p : sub.geometry_neighbor_pairs) {
+		int v0 = p.first;
+		int v1 = p.second;
+
+		add_entry_A(v0, v0, regular);
+		add_entry_A(v0, v1, -regular);
+		add_entry_A(v1, v0, -regular);
+		add_entry_A(v1, v1, regular);
+		add_entry_B(v0, regular * (V[v0] - V[v1]));
+		add_entry_B(v1, regular * (V[v1] - V[v0]));
+	}
+
 	Eigen::SparseMatrix<FT> A(num_entries, num_entries);
 	std::vector<T> tripletList;
 	for (auto& m : trips) {

@@ -161,3 +161,30 @@ void Mesh::FromDistanceField(UniformGrid& grid) {
 		F[i] = SF.row(i);
 }
 
+void Mesh::MergeDuplex() {
+	std::map<std::pair<int, std::pair<int, int> >, int> grid_map;
+	auto key = [&](const Vector3& v) {
+		return std::make_pair(v[0] * 1e6, std::make_pair(v[1] * 1e6, v[2] * 1e6));
+	};
+	int top = 0;
+	std::vector<int> shrink(V.size());
+	for (int i = 0; i < V.size(); ++i) {
+		auto k = key(V[i]);
+		auto it = grid_map.find(k);
+		if (it == grid_map.end()) {
+			shrink[i] = top;
+			grid_map[k] = top;
+			V[top] = V[i];
+			top++;
+		} else {
+			shrink[i] = it->second;
+		}
+	}
+	V.resize(top);
+	
+	for (int i = 0; i < F.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			F[i][j] = shrink[F[i][j]];
+		}
+	}
+}
