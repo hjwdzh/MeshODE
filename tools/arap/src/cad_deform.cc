@@ -18,6 +18,7 @@ int main(int argc, char** argv) {
 	}
 	//Deform source to fit the reference
 
+
 	Mesh src, ref, cad;
 	src.ReadOBJ(argv[1]);
 	ref.ReadOBJ(argv[2]);
@@ -25,19 +26,11 @@ int main(int argc, char** argv) {
 
 	Subdivision sub;
 	sub.Subdivide(cad, 3e-2);
-	sub.subdivide_mesh.WriteOBJ("debug.obj");
 
-	//std::vector<std::pair<int, int> > neighbors;
-	sub.ComputeGeometryNeighbors(1e-2);
+	MeshCover cover;
+	cover.Cover(src, sub.subdivide_mesh);
 
-	return 0;
-	//MeshCover shell;
-	//shell.Cover(src, cad);
-
-	//shell.cover.WriteOBJ("debug.obj");
-
-	//src = shell.cover;
-	//return 0;
+	//sub.ComputeGeometryNeighbors(1e-2);
 	if (argc > 5)
 		sscanf(argv[5], "%d", &GRID_RESOLUTION);
 
@@ -54,14 +47,18 @@ int main(int argc, char** argv) {
 
 	UniformGrid grid(GRID_RESOLUTION);
 	ref.Normalize();
+	sub.subdivide_mesh.ApplyTransform(ref);
 	src.ApplyTransform(ref);
-
 	ref.ConstructDistanceField(grid);
+	//sub.subdivide_mesh.WriteOBJ("debug.obj");
+	//ref.WriteOBJ("debug1.obj");
 	//src.HierarchicalDeform(grid);
 	Deform(src, grid, lambda);
 
 	std::cout<<"Deformed"<<std::endl;
 
-	src.WriteOBJ(argv[3]);
+	cover.UpdateCover();
+	cover.cover.WriteOBJ(argv[4]);
+	//sub.subdivide_mesh.WriteOBJ(argv[4]);
 	return 0;
 }

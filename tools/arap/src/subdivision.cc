@@ -3,7 +3,10 @@
 #include <fstream>
 #include <queue>
 #include <unordered_map>
-#include <unordered_set>
+
+#include <Eigen/Dense>
+
+#include "delaunay.h"
 
 Subdivision::Subdivision()
 {
@@ -65,14 +68,58 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 	}
 
 	std::sort(colors.begin(), colors.end());
+
+	vertex_component.resize(V.size(), 0);	
 	std::vector<Eigen::Vector3i> faces_buffer(F.size());
 	for (int i = 0; i < colors.size(); ++i) {
 		faces_buffer[i] = F[colors[i].second];
+		int v0 = faces_buffer[i][0];
+		int v1 = faces_buffer[i][1];
+		int v2 = faces_buffer[i][2];
+		vertex_component[v0] = colors[i].first;
+		vertex_component[v1] = colors[i].first;
+		vertex_component[v2] = colors[i].first;
 	}
 
 	F.clear();
 	parent_faces.clear();
 
+#ifdef USE_DELAUNAY_SUBDIVISION
+	std::unordered_map<long long, std::vector<int> > edge_subdivision_indices;
+	for (int i = 0; i < faces_buffer.size(); ++i) {
+		int vsize = V.size();
+		long long hash[3];
+		for (int j = 0; j < 3; ++j) {
+			int v0 = faces_buffer[i][j];
+			int v1 = faces_buffer[i][(j + 1) % 3];
+			auto h = EdgeHash(v0, v1, vsize);
+			hash[j] = h;
+			if (edge_subdivision_indices.count(h) == 0) {
+				Vector3 diff = V[v1] - V[v0];
+				int num_splits = diff.norm() / len_thres + 1;
+				diff /= (FT)num_splits;
+				std::vector<int> vindices;
+				vindices.push_back(v0);
+				for (int j = 0; j < num_splits - 1; ++j) {
+					vindices.push_back(V.size());
+					V.push_back(V[v0] + diff * j);
+				}
+				vindices.push_back(v1);
+				edge_subdivision_indices[h] = vindices;
+			}
+		}
+		std::unordered_set<int> boundary_indices;
+		for (int j = 0; j < 3; ++j) {
+			for (auto& k : edge_subdivision_indices[hash[j]])
+				boundary_indices.insert(k);
+		}
+
+		DelaunaySubdivision(boundary_indices, V, F, faces_buffer[i], len_thres);
+		for (int j = vsize; j < V.size(); ++j)
+			vertex_component.push_back(colors[i].first);
+	}
+#else
+	std::vector<int> connected_component_segments;
 	connected_component_segments.clear();
 	connected_component_segments.push_back(0);
 
@@ -105,11 +152,67 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 				vertex_component[F[j][k]] = i;
 			}
 		}
-	}
+	}	
 	ComputeGeometryNeighbors(len_thres / 8.0);
 	ComputeGeometryNeighbors(len_thres / 4.0);
+#endif
+
 	ComputeGeometryNeighbors(len_thres / 2.0);
 	ComputeGeometryNeighbors(len_thres / 1.0);
+}
+
+void Subdivision::DelaunaySubdivision(
+	std::unordered_set<int>& boundary_indices,
+	std::vector<Vector3>& V,
+	std::vector<Eigen::Vector3i>& F,
+	Eigen::Vector3i& face,
+	double len_thres) {
+
+	std::vector<int> vindices;
+	auto v0 = V[face[0]];
+	auto v1 = V[face[1]];
+	auto v2 = V[face[2]];
+	Vector3 n = (v1 - v0).cross(v2 - v0);
+	FT area = n.norm();
+	n /= area;
+	Vector3 tx(0.3352, 0.5589, 0.7532);
+	tx = tx.cross(n);
+	tx / tx.norm();
+	Vector3 ty = n.cross(tx);
+
+	int num_vertices = area / (len_thres*len_thres) + 0.5;
+	Eigen::MatrixXd V2D(num_vertices + boundary_indices.size(), 2);
+	int top = 0;
+	for (auto p : boundary_indices) {
+		auto v = V[p];
+		vindices.push_back(p);
+		V2D(top, 0) = v.dot(tx);
+		V2D(top, 1) = v.dot(ty);
+		top += 1;
+	}
+
+	for (int i = top; i < V2D.rows(); ++i) {
+		FT x = rand() / (FT)RAND_MAX;
+		FT y = rand() / (FT)RAND_MAX;
+		if (x + y > 1) {
+			x = 1 - x;
+			y = 1 - y;
+		}
+		Vector3 rand_p = v0 + (v1 - v0) * x + (v2 - v0) * y;
+		vindices.push_back(V.size());
+		V.push_back(rand_p);
+		V2D(i, 0) = rand_p.dot(tx);
+		V2D(i, 1) = rand_p.dot(ty);
+	}
+	Eigen::MatrixXi F2D;
+
+	delaunay(V2D, F2D);
+	for (int i = 0; i < F2D.rows(); ++i) {
+		int v0 = vindices[F2D(i, 0)];
+		int v1 = vindices[F2D(i, 1)];
+		int v2 = vindices[F2D(i, 2)];
+		F.push_back(Eigen::Vector3i(v0, v1, v2));
+	}
 }
 
 void Subdivision::ComputeGeometryNeighbors(double thres) {

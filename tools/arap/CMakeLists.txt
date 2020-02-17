@@ -14,16 +14,20 @@ set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS}")
 set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG}")
 
 find_package(ceres REQUIRED)
+find_package(CGAL)
 
 include_directories(/orion/u/jingweih/3rd/)
 include_directories(/orion/u/jingweih/3rd/eigen3/)
 
 include_directories(/Users/jingwei/Desktop/project/libigl/include)
+include(${CGAL_USE_FILE})
 
 add_library(
 	deform SHARED
     src/deform.cc
     src/deform.h
+    src/delaunay.cc
+    src/delaunay.h
     src/mesh.cc
     src/mesh.h
     src/meshcover.cc
@@ -72,4 +76,5 @@ target_link_libraries(
     cad_deform
     deform
     ${CERES_LIBRARIES}
+    ${CGAL_LIBRARIES}
 )
