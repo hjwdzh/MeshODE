@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
 	Mesh src, ref, cad;
 	src.ReadOBJ(argv[1]);
 	ref.ReadOBJ(argv[2]);
-	cad.ReadOBJ(argv[3]);
+	//cad.ReadOBJ(argv[3]);
 
 	//MeshCover shell;
 	//shell.Cover(src, cad);
@@ -29,15 +29,15 @@ int main(int argc, char** argv) {
 
 	//src = shell.cover;
 	//return 0;
-	if (argc > 5)
-		sscanf(argv[5], "%d", &GRID_RESOLUTION);
+	if (argc > 4)
+		sscanf(argv[4], "%d", &GRID_RESOLUTION);
 
-	if (argc > 6)
-		sscanf(argv[6], "%d", &MESH_RESOLUTION);
+	if (argc > 5)
+		sscanf(argv[5], "%d", &MESH_RESOLUTION);
 
 	FT lambda = 1;
-	if (argc > 7)
-		sscanf(argv[7], "%lf", &lambda);
+	if (argc > 6)
+		sscanf(argv[6], "%lf", &lambda);
 	printf("lambda %lf\n", lambda);
 	//Get number of vertices and faces
 	std::cout<<"Source:\t\t"<<"Num vertices: "<<src.V.size()<<"\tNum faces: "<<src.F.size()<<std::endl;
@@ -53,6 +53,6 @@ int main(int argc, char** argv) {
 
 	std::cout<<"Deformed"<<std::endl;
 
-	src.WriteOBJ(argv[4]);
+	src.WriteOBJ(argv[3]);
 	return 0;
 }
