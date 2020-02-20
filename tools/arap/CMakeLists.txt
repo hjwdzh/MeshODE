@@ -82,3 +82,13 @@ target_link_libraries(
     gmp
     #${CGAL_LIBRARIES}
 )
+
+add_executable(
+    reverse_deform
+    src/reverse_deform.cc
+)
+
+target_link_libraries(
+    reverse_deform
+    deform
+)
