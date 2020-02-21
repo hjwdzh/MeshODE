@@ -25,6 +25,7 @@ link_directories(/orion/u/jingweih/3rd/cgal-install/lib)
 #include(${CGAL_USE_FILE})
 add_library(
     deform SHARED
+    src/callback.h
     src/deform.cc
     src/deform.h
     src/delaunay.cc

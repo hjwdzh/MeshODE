@@ -5,7 +5,7 @@
 #include "distanceloss.h"
 #include "edgeloss.h"
 
-void Deform(Mesh& mesh, UniformGrid& grid, FT lambda) {
+void Deform(Mesh& mesh, UniformGrid& grid, FT lambda, TerminateWhenSuccessCallback* callback) {
 	auto& V = mesh.V;
 	auto& F = mesh.F;
 	
@@ -37,10 +37,22 @@ void Deform(Mesh& mesh, UniformGrid& grid, FT lambda) {
 	options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
 	options.minimizer_progress_to_stdout = true;
 	options.num_threads = 1;
-	ceres::Solver::Summary summary;
-	ceres::Solve(options, &problem, &summary);
-	std::cout << summary.FullReport() << "\n";
+	if (callback) {
+		double prev_cost = 1e30;
+		options.callbacks.push_back(callback);
 
+		while (true) {
+			ceres::Solver::Summary summary;
+			ceres::Solve(options, &problem, &summary);
+			if (std::abs(prev_cost - summary.final_cost) < 1e-6)
+				break;
+			prev_cost = summary.final_cost;
+		}
+	} else {
+		ceres::Solver::Summary summary;
+		ceres::Solve(options, &problem, &summary);
+	}
+	
 	//V error
 	ceres::Problem::EvaluateOptions v_options;
 	v_options.residual_blocks = v_block_ids;
@@ -59,7 +71,7 @@ void Deform(Mesh& mesh, UniformGrid& grid, FT lambda) {
 	std::cout<<"Final cost: "<<final_cost<<std::endl;
 }
 
-void DeformWithRot(Mesh& mesh, UniformGrid& grid, FT lambda) {
+void DeformWithRot(Mesh& mesh, UniformGrid& grid, FT lambda, TerminateWhenSuccessCallback* callback) {
 	auto& V = mesh.V;
 	auto& F = mesh.F;
 	
@@ -97,10 +109,21 @@ void DeformWithRot(Mesh& mesh, UniformGrid& grid, FT lambda) {
 	options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
 	options.minimizer_progress_to_stdout = true;
 	options.num_threads = 1;
-	ceres::Solver::Summary summary;
-	ceres::Solve(options, &problem, &summary);
-	std::cout << summary.FullReport() << "\n";
+	if (callback) {
+		double prev_cost = 1e30;
+		options.callbacks.push_back(callback);
 
+		while (true) {
+			ceres::Solver::Summary summary;
+			ceres::Solve(options, &problem, &summary);
+			if (std::abs(prev_cost - summary.final_cost) < 1e-6)
+				break;
+			prev_cost = summary.final_cost;
+		}
+	} else {
+		ceres::Solver::Summary summary;
+		ceres::Solve(options, &problem, &summary);
+	}
 	//V error
 	ceres::Problem::EvaluateOptions v_options;
 	v_options.residual_blocks = v_block_ids;
@@ -119,7 +142,7 @@ void DeformWithRot(Mesh& mesh, UniformGrid& grid, FT lambda) {
 	std::cout<<"Final cost: "<<final_cost<<std::endl;
 }
 
-void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda) {
+void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda, TerminateWhenSuccessCallback* callback) {
 	auto& mesh = sub.subdivide_mesh;
 	auto& V = mesh.V;
 	auto& F = mesh.F;
@@ -163,9 +186,21 @@ void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda) {
 	options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
 	options.minimizer_progress_to_stdout = true;
 	options.num_threads = 1;
-	ceres::Solver::Summary summary;
-	ceres::Solve(options, &problem, &summary);
-	std::cout << summary.FullReport() << "\n";
+	if (callback) {
+		double prev_cost = 1e30;
+		options.callbacks.push_back(callback);
+
+		while (true) {
+			ceres::Solver::Summary summary;
+			ceres::Solve(options, &problem, &summary);
+			if (std::abs(prev_cost - summary.final_cost) < 1e-6)
+				break;
+			prev_cost = summary.final_cost;
+		}
+	} else {
+		ceres::Solver::Summary summary;
+		ceres::Solve(options, &problem, &summary);
+	}
 
 	//V error
 	ceres::Problem::EvaluateOptions v_options;

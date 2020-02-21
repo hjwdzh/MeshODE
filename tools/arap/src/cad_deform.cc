@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "callback.h"
 #include "deform.h"
 #include "mesh.h"
 #include "meshcover.h"
@@ -11,10 +12,16 @@
 int GRID_RESOLUTION = 64;
 int MESH_RESOLUTION = 5000;
 
+std::vector<Vector3>* vertex_pointer;
+std::vector<std::vector<Vector3> > flow;
+void callback()
+{
+	flow.push_back(*vertex_pointer);
+}
 // main function
 int main(int argc, char** argv) {	
 	if (argc < 5) {
-		printf("./deform cad.obj reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0]\n");
+		printf("./deform cad.obj reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0] [flow_output=filename]\n");
 		return 0;
 	}
 	//Deform source to fit the reference
@@ -26,7 +33,7 @@ int main(int argc, char** argv) {
 
 	int symmetry = 0;
 	if (argc > 7) {
-		sscanf(argv[6], "%d", &symmetry);
+		sscanf(argv[7], "%d", &symmetry);
 	}
 
 	if (symmetry)
@@ -64,7 +71,35 @@ int main(int argc, char** argv) {
 	//ref.WriteOBJ("debug1.obj");
 	//src.HierarchicalDeform(grid);
 	//Deform(src, grid, lambda);
-	DeformSubdivision(sub, grid, lambda);
+	int need_callback = 0;
+	std::string flow_file = "";
+	if (argc > 8) {
+		need_callback = 1;
+		flow_file = argv[8];
+	}
+
+	if (!need_callback) {
+		DeformSubdivision(sub, grid, lambda);
+	} else {
+		TerminateWhenSuccessCallback tc(callback);
+		vertex_pointer = &sub.subdivide_mesh.V;
+		DeformSubdivision(sub, grid, lambda, &tc);
+		flow.push_back(*vertex_pointer);
+
+		std::ofstream os(flow_file);
+		int top = 1;
+		for (int i = 0; i < flow[0].size(); ++i) {
+			for (int j = 0; j < flow.size(); ++j) {
+				auto v = flow[j][i] * sub.subdivide_mesh.scale + sub.subdivide_mesh.pos;
+				os << "v " << v[0] << " " << v[1] << " " << v[2] << "\n";
+			}
+			for (int j = 0; j < flow.size() - 1; ++j) {
+				os << "l " << top + j << " " << top + j + 1 << "\n";
+			}
+			top += flow.size();
+		}
+		os.close();
+	}
 	std::cout<<"Deformed"<<std::endl;
 
 	//std::cout << sub.subdivide_mesh.F.size() << "\n";
