@@ -451,23 +451,20 @@ void Subdivision::SmoothInternal() {
 			links[v0].insert(v1);
 		}
 	}
-	auto V_buf = V;
-	std::ofstream os("../example/points.obj");
-	for (int i = 0; i < V.size(); ++i) {
-		if (!internal_vertices[i]) {
-			os << "v " << V[i][0] << " " << V[i][1] << " " << V[i][2] << " 255 0 0\n";
-			continue;
-		} else {
-			os << "v " << V[i][0] << " " << V[i][1] << " " << V[i][2] << " 0 255 0\n";
+	for (int iter = 0; iter < 3; ++iter) {
+		auto V_buf = V;
+		for (int i = 0; i < V.size(); ++i) {
+			if (!internal_vertices[i]) {
+				continue;
+			}
+			if (links[i].size() == 0)
+				continue;
+			Eigen::Vector3d v(0, 0, 0);
+			for (auto& l : links[i]) {
+				v += V_buf[l];
+			}
+			v /= links[i].size();
+			V[i] = v;
 		}
-		if (links[i].size() == 0)
-			continue;
-		Eigen::Vector3d v(0, 0, 0);
-		for (auto& l : links[i]) {
-			v += V_buf[l];
-		}
-		v /= links[i].size();
-		V[i] = v;
 	}
-	os.close();
 }
