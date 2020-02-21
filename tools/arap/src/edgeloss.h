@@ -35,7 +35,7 @@ struct EdgeLoss {
 struct AdaptiveEdgeLoss {
   AdaptiveEdgeLoss(const Vector3& v_, FT lambda_)
   : v(v_), lambda(lambda_) {
-    lambda = lambda * (2e-2 / v.norm());
+    lambda = lambda * (2e-2 / (v.norm()+1e-8));
   }
 
   template <typename T>

@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
 	if (symmetry)
 		ref.ReflectionSymmetrize();
 
+	cad.RemoveDegenerated();
 	cad.MergeDuplex();
 	//cad.WriteOBJ("../example/test.obj");
 
@@ -66,9 +67,9 @@ int main(int argc, char** argv) {
 	DeformSubdivision(sub, grid, lambda);
 	std::cout<<"Deformed"<<std::endl;
 
-	std::cout << sub.subdivide_mesh.F.size() << "\n";
-	sub.SmoothInternal();
-	std::cout << sub.subdivide_mesh.F.size() << "\n";
+	//std::cout << sub.subdivide_mesh.F.size() << "\n";
+	//sub.SmoothInternal();
+	//std::cout << sub.subdivide_mesh.F.size() << "\n";
 	//cover.UpdateCover(src, sub);
 	sub.subdivide_mesh.WriteOBJ(argv[3]);
 	return 0;

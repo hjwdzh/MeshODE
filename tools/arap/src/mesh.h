@@ -24,6 +24,7 @@ public:
 	void FromDistanceField(UniformGrid& grid);
 
 	// Merge
+	void RemoveDegenerated();
 	void MergeDuplex();
 
 	// Main Deformation function

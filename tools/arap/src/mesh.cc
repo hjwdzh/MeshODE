@@ -285,5 +285,18 @@ void Mesh::LogStatistics(const char* filename) {
 		}
 	}
 	os.close();
-	printf("Dup Boundary %d %d\n", duplicate, boundary);
+}
+
+void Mesh::RemoveDegenerated() {
+	int top = 0;
+	for (int i = 0; i < F.size(); ++i) {
+		Eigen::Vector3d v0 = V[F[i][0]];
+		Eigen::Vector3d v1 = V[F[i][1]];
+		Eigen::Vector3d v2 = V[F[i][2]];
+		Eigen::Vector3d n = (v1 - v0).cross(v2 - v0);
+		if (n.norm() > 0) {
+			F[top++] = F[i];
+		}
+	}
+	F.resize(top);
 }
