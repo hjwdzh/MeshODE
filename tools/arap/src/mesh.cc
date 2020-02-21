@@ -188,3 +188,14 @@ void Mesh::MergeDuplex() {
 		}
 	}
 }
+
+void Mesh::ReflectionSymmetrize() {
+	int face_num = F.size();
+	int vert_num = V.size();
+	for (int i = 0; i < vert_num; ++i) {
+		V.push_back(Vector3(-V[i][0], V[i][1], V[i][2]));
+	}
+	for (int i = 0; i < face_num; ++i) {
+		F.push_back(Eigen::Vector3i(F[i][0] + vert_num, F[i][1] + vert_num, F[i][2] + vert_num));
+	}
+}

@@ -14,6 +14,7 @@ public:
 	void ReadOBJ(const char* filename);
 	void WriteOBJ(const char* filename, bool normalized = false);
 
+	void ReflectionSymmetrize();
 	// Normalize and Denormalize
 	void Normalize();
 	void ApplyTransform(Mesh& m);

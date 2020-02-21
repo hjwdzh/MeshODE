@@ -14,7 +14,7 @@ set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS}")
 set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG}")
 
 find_package(ceres REQUIRED)
-#find_package(CGAL)
+find_package(CGAL)
 
 include_directories(/orion/u/jingweih/3rd/)
 include_directories(/orion/u/jingweih/3rd/eigen3/)
@@ -23,7 +23,7 @@ include_directories(/Users/jingwei/Desktop/project/libigl/include)
 include_directories(/orion/u/jingweih/3rd/cgal-install/include)
 
 link_directories(/orion/u/jingweih/3rd/cgal-install/lib)
-#include(${CGAL_USE_FILE})
+include(${CGAL_USE_FILE})
 
 add_library(
 	deform SHARED
@@ -79,8 +79,8 @@ target_link_libraries(
     cad_deform
     deform
     ${CERES_LIBRARIES}
-    gmp
-    #${CGAL_LIBRARIES}
+    #gmp
+    ${CGAL_LIBRARIES}
 )
 
 add_executable(

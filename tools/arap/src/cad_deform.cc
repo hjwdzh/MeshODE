@@ -14,7 +14,7 @@ int MESH_RESOLUTION = 5000;
 // main function
 int main(int argc, char** argv) {	
 	if (argc < 5) {
-		printf("./deform cad.obj reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1]\n");
+		printf("./deform cad.obj reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0]\n");
 		return 0;
 	}
 	//Deform source to fit the reference
@@ -23,6 +23,14 @@ int main(int argc, char** argv) {
 	Mesh ref, cad;
 	cad.ReadOBJ(argv[1]);
 	ref.ReadOBJ(argv[2]);
+
+	int symmetry = 0;
+	if (argc > 7) {
+		sscanf(argv[6], "%d", &symmetry);
+	}
+
+	if (symmetry)
+		ref.ReflectionSymmetrize();
 
 	Subdivision sub;
 	sub.Subdivide(cad, 1e-2);
