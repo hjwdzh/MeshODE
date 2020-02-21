@@ -138,14 +138,24 @@ void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda) {
 	//Enforce rigidity
 	std::vector<ceres::ResidualBlockId> edge_block_ids;
 	edge_block_ids.reserve(3 * F.size());
+
 	edge_block_ids.reserve(sub.geometry_neighbor_pairs.size());
 	for (auto& p : sub.geometry_neighbor_pairs) {
 		int v1 = p.first;
 		int v2 = p.second;
 		Vector3 v = (V[v1] - V[v2]);
-		ceres::CostFunction* cost_function = EdgeLoss::Create(v, lambda);
+		ceres::CostFunction* cost_function = AdaptiveEdgeLoss::Create(v, lambda);
 		ceres::ResidualBlockId block_id = problem.AddResidualBlock(cost_function, 0, V[v1].data(), V[v2].data());
 		edge_block_ids.push_back(block_id);
+	}
+
+	for (int i = 0; i < F.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			Vector3 v = (V[F[i][j]] - V[F[i][(j + 1) % 3]]);
+			ceres::CostFunction* cost_function = AdaptiveEdgeLoss::Create(v, lambda);
+			ceres::ResidualBlockId block_id = problem.AddResidualBlock(cost_function, 0, V[F[i][j]].data(), V[F[i][(j + 1) % 3]].data());
+			edge_block_ids.push_back(block_id);
+		}
 	}
 
 	ceres::Solver::Options options;

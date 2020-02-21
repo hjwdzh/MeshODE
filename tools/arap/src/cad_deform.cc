@@ -32,11 +32,13 @@ int main(int argc, char** argv) {
 	if (symmetry)
 		ref.ReflectionSymmetrize();
 
-	Subdivision sub;
-	sub.Subdivide(cad, 1e-2);
-	sub.subdivide_mesh.MergeDuplex();
+	cad.MergeDuplex();
+	//cad.WriteOBJ("../example/test.obj");
 
-	sub.ComputeGeometryNeighbors(1.5e-2);
+	Subdivision sub;
+	sub.Subdivide(cad, 2e-2);
+
+	sub.ComputeGeometryNeighbors(3e-2);
 
 	//sub.ComputeGeometryNeighbors(1e-2);
 	if (argc > 4)
@@ -64,6 +66,9 @@ int main(int argc, char** argv) {
 	DeformSubdivision(sub, grid, lambda);
 	std::cout<<"Deformed"<<std::endl;
 
+	std::cout << sub.subdivide_mesh.F.size() << "\n";
+	sub.SmoothInternal();
+	std::cout << sub.subdivide_mesh.F.size() << "\n";
 	//cover.UpdateCover(src, sub);
 	sub.subdivide_mesh.WriteOBJ(argv[3]);
 	return 0;

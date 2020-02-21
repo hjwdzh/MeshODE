@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <strstream>
+#include <set>
 
 #include <igl/copyleft/marching_cubes.h>
 #include <igl/point_mesh_squared_distance.h>
@@ -187,6 +188,28 @@ void Mesh::MergeDuplex() {
 			F[i][j] = shrink[F[i][j]];
 		}
 	}
+
+	std::set<std::pair<int, std::pair<int, int> > > face_set;
+	top = 0;
+	for (int i = 0; i < F.size(); ++i) {
+		int v0 = F[i][0];
+		int v1 = F[i][1];
+		int v2 = F[i][2];
+		if (v0 == v1 || v1 == v2 || v2 == v0)
+			continue;
+		if (v0 > v1)
+			std::swap(v0, v1);
+		if (v0 > v2)
+			std::swap(v0, v2);
+		if (v1 > v2)
+			std::swap(v1, v2);
+		auto k = std::make_pair(v0, std::make_pair(v1, v2));
+		if (face_set.count(k))
+			continue;
+		face_set.insert(k);
+		F[top++] = F[i];
+	}
+	F.resize(top);
 }
 
 void Mesh::ReflectionSymmetrize() {
@@ -229,4 +252,38 @@ void Mesh::ComputeVertexNormals() {
 	for (int i = 0; i < NV.size(); ++i) {
 		NV[i] /= NV[i].norm();
 	}
+}
+
+void Mesh::LogStatistics(const char* filename) {
+	std::set<std::pair<int, int> > edges;
+	int duplicate = 0;
+	int boundary = 0;
+	for (int i = 0; i < F.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int v0 = F[i][j];
+			int v1 = F[i][(j+1)%3];
+			auto key = std::make_pair(v0, v1);
+			if (edges.count(key)) {
+				duplicate += 1;
+			}
+			edges.insert(key);
+		}
+	}
+
+	std::ofstream os(filename);
+	int top = 1;
+	for (auto& info : edges) {
+		auto rinfo = std::make_pair(info.second, info.first);
+		if (!edges.count(rinfo)) {
+			boundary += 1;
+			auto v0 = V[info.first];
+			auto v1 = V[info.second];
+			os << "v " << v0[0] << " " << v0[1] << " " << v0[2] << "\n";
+			os << "v " << v1[0] << " " << v1[1] << " " << v1[2] << "\n";
+			os << "l " << top << " " << top + 1 << "\n";
+			top += 2;
+		}
+	}
+	os.close();
+	printf("Dup Boundary %d %d\n", duplicate, boundary);
 }

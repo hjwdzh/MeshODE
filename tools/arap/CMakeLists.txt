@@ -15,7 +15,7 @@ set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG}")
 
 find_package(ceres REQUIRED)
 find_package(BLAS REQUIRED)
-#find_package(CGAL)
+find_package(CGAL)
 
 include_directories(/orion/u/jingweih/3rd/)
 include_directories(/orion/u/jingweih/3rd/eigen3/)

@@ -32,6 +32,8 @@ public:
 	void ComputeVertexNormals();
 	void ComputeFaceNormals();
 
+	void LogStatistics(const char* filename);
+
 	std::vector<Vector3> V;
 	std::vector<Eigen::Vector3i> F;
 

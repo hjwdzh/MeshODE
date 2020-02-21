@@ -44,6 +44,8 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 	auto& V = subdivide_mesh.V;
 	auto& F = subdivide_mesh.F;
 
+	std::unordered_set<int> boundary_vertices;
+
 	// Build the edge to face graph
 	std::unordered_map<long long, std::unordered_set<int> > edge_to_face;
 	for (int i = 0; i < F.size(); ++i) {
@@ -106,10 +108,11 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 	F.clear();
 	parent_faces.clear();
 
+	int v_num = V.size();
 	int vsize = 0x7fffffff;
 #ifdef USE_DELAUNAY_SUBDIVISION
 	std::unordered_map<long long, std::vector<int> > edge_subdivision_indices;
-	for (int i = 8; i < faces_buffer.size(); ++i) {
+	for (int i = 0; i < faces_buffer.size(); ++i) {
 		long long hash[3];
 		for (int j = 0; j < 3; ++j) {
 			int v0 = faces_buffer[i][j];
@@ -122,7 +125,8 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 				diff /= (FT)num_splits;
 				std::vector<int> vindices;
 				vindices.push_back(v0);
-				for (int j = 0; j < num_splits - 1; ++j) {
+				for (int j = 1; j < num_splits; ++j) {
+					boundary_vertices.insert(V.size());
 					vindices.push_back(V.size());
 					V.push_back(V[v0] + diff * j);
 				}
@@ -130,10 +134,9 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 				edge_subdivision_indices[h] = vindices;
 			}
 		}
-		std::unordered_set<int> boundary_indices[3];
+		std::vector<int> boundary_indices[3];
 		for (int j = 0; j < 3; ++j) {
-			for (auto& p : edge_subdivision_indices[hash[j]])
-				boundary_indices[j].insert(p);
+			boundary_indices[j] = edge_subdivision_indices[hash[j]];
 		}
 		DelaunaySubdivision(boundary_indices, V, F, faces_buffer[i], len_thres, i == 9);
 
@@ -176,42 +179,49 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 		}
 	}	
 #endif
+	internal_vertices.resize(V.size(), 0);
+	for (int i = v_num; i < V.size(); ++i) {
+		if (!boundary_vertices.count(i))
+			internal_vertices[i] = 1;
+	}
 }
 
 void Subdivision::DelaunaySubdivision(
-	std::unordered_set<int>* boundary_indices,
+	std::vector<int>* boundary_indices,
 	std::vector<Vector3>& V,
 	std::vector<Eigen::Vector3i>& F,
 	Eigen::Vector3i& face,
 	double len_thres, bool debug) {
 
+	Eigen::Vector3d v0 = V[face[0]];
+	Eigen::Vector3d v1 = V[face[1]];
+	Eigen::Vector3d v2 = V[face[2]];
+
+	Eigen::Vector3d n = (v1 - v0).cross(v2 - v0);
+	n /= n.norm();
 	std::unordered_set<int> merged_indices;
+	std::unordered_map<int, Eigen::Vector3d> curved_point;
 	for (int i = 0; i < 3; ++i) {
-		for (auto& p : boundary_indices[i])
-			merged_indices.insert(p);
-	}
-	std::unordered_map<int, std::unordered_set<int>> boundary_links[3];
-	for (int i = 0; i < 3; ++i) {
-		int q = -1;
-		for (auto& p : boundary_indices[i])
-			boundary_links[i][p] = std::unordered_set<int>();
+		Eigen::Vector3d x = V[face[i]];
+		Eigen::Vector3d y = V[face[(i+1)%3]];
+		Eigen::Vector3d dir = n.cross(y - x);
+		dir /= dir.norm();
+		Eigen::Vector3d c = (y + x) * 0.5 + 1e3 * dir;
+		double len = (c - x).norm();
 		for (auto& p : boundary_indices[i]) {
-			if (q != -1) {
-				boundary_links[i][p].insert(q);
-				boundary_links[i][q].insert(p);
-			}
-			q = p;
+			merged_indices.insert(p);
+			Eigen::Vector3d diff = V[p] - c;
+			diff = diff / diff.norm() * len + c;
+			curved_point[p] = diff;
 		}
 	}
 
 	std::vector<int> vindices;
-	auto v0 = V[face[0]];
-	auto v1 = V[face[1]];
-	auto v2 = V[face[2]];
-	Vector3 n = (v1 - v0).cross(v2 - v0);
+	std::vector<Eigen::Vector3d> points;
+	auto c = (v0 + v1 + v2) / 3.0;
 
-	FT area = n.norm();
-	n /= area;
+	double max_len = std::max((c - v0).norm(), std::max((c - v1).norm(), (c - v2).norm()));
+
 	int min_axis = 0;
 	for (int i = 1; i < 3; ++i) {
 		if (std::abs(n[i]) < std::abs(n[min_axis])) {
@@ -227,6 +237,10 @@ void Subdivision::DelaunaySubdivision(
 	for (auto p : merged_indices) {
 		auto v = V[p];
 		vindices.push_back(p);
+		Eigen::Vector3d diff = v - c;
+		diff = diff / diff.norm() * max_len + c;
+		//points.push_back(v);
+		points.push_back(curved_point[p]);
 	}
 
 	double v0x = 0;
@@ -251,6 +265,7 @@ void Subdivision::DelaunaySubdivision(
 				Vector3 rand_p = v0 + tx * (px * len_thres) + ty * (py * len_thres);
 				vindices.push_back(V.size());
 				V.push_back(rand_p);
+				points.push_back(rand_p);
 				count += 1;
 			}
 		}
@@ -259,8 +274,8 @@ void Subdivision::DelaunaySubdivision(
 
 	Eigen::MatrixXd V2D(vindices.size(), 2);
 	for (int i = 0; i < vindices.size(); ++i) {
-		V2D(i, 0) = (V[vindices[i]] - v0).dot(tx);
-		V2D(i, 1) = (V[vindices[i]] - v0).dot(ty);
+		V2D(i, 0) = (points[i] - v0).dot(tx);
+		V2D(i, 1) = (points[i] - v0).dot(ty);
 	}
 
 	Eigen::MatrixXi F2D;
@@ -277,6 +292,7 @@ void Subdivision::DelaunaySubdivision(
 			for (int k = j + 1; k < 3; ++k) {
 				if ((V[v[j]] - V[v[k]]).norm() > 3 * len_thres) {
 					boundary_triangle = true;
+					printf("Boundary!\n");
 				}
 			}
 		}
@@ -421,3 +437,37 @@ long long Subdivision::EdgeHash(int v1, int v2, int vsize) {
 	else
 		return (long long)v2 * (long long)vsize + v1;
 }	
+
+
+void Subdivision::SmoothInternal() {
+	auto& V = subdivide_mesh.V;
+	auto& F = subdivide_mesh.F;
+	std::vector<std::unordered_set<int> > links(V.size());
+	for (int i = 0; i < F.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int v0 = F[i][j];
+			int v1 = F[i][(j + 1) % 3];
+			links[v1].insert(v0);
+			links[v0].insert(v1);
+		}
+	}
+	auto V_buf = V;
+	std::ofstream os("../example/points.obj");
+	for (int i = 0; i < V.size(); ++i) {
+		if (!internal_vertices[i]) {
+			os << "v " << V[i][0] << " " << V[i][1] << " " << V[i][2] << " 255 0 0\n";
+			continue;
+		} else {
+			os << "v " << V[i][0] << " " << V[i][1] << " " << V[i][2] << " 0 255 0\n";
+		}
+		if (links[i].size() == 0)
+			continue;
+		Eigen::Vector3d v(0, 0, 0);
+		for (auto& l : links[i]) {
+			v += V_buf[l];
+		}
+		v /= links[i].size();
+		V[i] = v;
+	}
+	os.close();
+}

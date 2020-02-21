@@ -13,15 +13,17 @@ public:
 	void Subdivide(const Mesh& mesh, double len_thres);
 	void ComputeGeometryNeighbors(double len_thres);
 
+	void SmoothInternal();
 	const Mesh* reference_mesh;
 	Mesh subdivide_mesh;
 
 	std::vector<int> parent_faces;
 	std::set<std::pair<int, int> > geometry_neighbor_pairs;
 	std::vector<int> vertex_component;
+	std::vector<int> internal_vertices;
 protected:
 	void DelaunaySubdivision(
-		std::unordered_set<int>* boundary_indices,
+		std::vector<int>* boundary_indices,
 		std::vector<Vector3>& V,
 		std::vector<Eigen::Vector3i>& F,
 		Eigen::Vector3i& face,
