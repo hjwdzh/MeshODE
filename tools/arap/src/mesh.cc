@@ -199,3 +199,34 @@ void Mesh::ReflectionSymmetrize() {
 		F.push_back(Eigen::Vector3i(F[i][0] + vert_num, F[i][1] + vert_num, F[i][2] + vert_num));
 	}
 }
+
+void Mesh::ComputeFaceNormals() {
+	NF.resize(F.size());
+	for (auto& n : NF)
+		n = Eigen::Vector3d(0, 0, 0);
+	for (int i = 0; i < F.size(); ++i) {
+		Eigen::Vector3d& v0 = V[F[i][0]];
+		Eigen::Vector3d& v1 = V[F[i][1]];
+		Eigen::Vector3d& v2 = V[F[i][2]];
+		NF[i] = (v1 - v0).cross(v2 - v0);
+		NF[i] /= NF[i].norm();
+	}
+}
+
+void Mesh::ComputeVertexNormals() {
+	NV.resize(V.size());
+	for (auto& n : NV)
+		n = Eigen::Vector3d(0, 0, 0);
+	for (int i = 0; i < F.size(); ++i) {
+		Eigen::Vector3d& v0 = V[F[i][0]];
+		Eigen::Vector3d& v1 = V[F[i][1]];
+		Eigen::Vector3d& v2 = V[F[i][2]];
+		Eigen::Vector3d n = (v1 - v0).cross(v2 - v0);
+		NV[F[i][0]] += n;
+		NV[F[i][1]] += n;
+		NV[F[i][2]] += n;
+	}
+	for (int i = 0; i < NV.size(); ++i) {
+		NV[i] /= NV[i].norm();
+	}
+}

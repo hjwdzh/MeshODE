@@ -29,9 +29,13 @@ public:
 	// Main Deformation function
 	void Deform(UniformGrid& grid);
 
+	void ComputeVertexNormals();
+	void ComputeFaceNormals();
+
 	std::vector<Vector3> V;
 	std::vector<Eigen::Vector3i> F;
 
+	std::vector<Eigen::Vector3d> NF, NV;
 	FT scale;
 	Vector3 pos;
 };

@@ -22,7 +22,7 @@ include_directories(/orion/u/jingweih/3rd/eigen3/)
 
 include_directories(/orion/u/jingweih/3rd/cgal-install/include)
 link_directories(/orion/u/jingweih/3rd/cgal-install/lib)
-
+#include(${CGAL_USE_FILE})
 add_library(
     deform SHARED
     src/deform.cc
@@ -88,5 +88,15 @@ add_executable(
 
 target_link_libraries(
     reverse_deform
+    deform
+)
+
+add_executable(
+    coverage_deform
+    src/coverage_deform.cc
+)
+
+target_link_libraries(
+    coverage_deform
     deform
 )
