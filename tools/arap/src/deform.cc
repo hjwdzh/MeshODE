@@ -297,10 +297,11 @@ void ReverseDeform(Mesh& src, Mesh& tar, FT lambda) {
 			break;
 		prev_cost = summary.final_cost;
 		step += 1;
-		if (step == 100)
+		if (step == 30)
 			break;
 	}
 
+	printf("Step used %d\n", step);
 	for (int i = 0; i < src.V.size(); ++i)
 		src.V[i] = V1.row(i);
 }

@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 
 #include "deform.h"
@@ -11,12 +12,14 @@ int MESH_RESOLUTION = 5000;
 
 // main function
 int main(int argc, char** argv) {	
+
 	if (argc < 5) {
 		printf("./deform source.obj reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0]\n");
 		return 0;
 	}
 	//Deform source to fit the reference
 
+	auto start = std::chrono::steady_clock::now();
 	Mesh src, ref, cad;
 	src.ReadOBJ(argv[1]);
 	ref.ReadOBJ(argv[2]);
@@ -62,5 +65,10 @@ int main(int argc, char** argv) {
 	std::cout<<"Deformed"<<std::endl;
 
 	src.WriteOBJ(argv[3]);
+	auto end = std::chrono::steady_clock::now();
+
+	std::cout << "Elapsed time in seconds : " 
+		<< std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+		<< " sec!\n";
 	return 0;
 }
