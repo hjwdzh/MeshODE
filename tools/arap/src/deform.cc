@@ -222,7 +222,7 @@ void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda, Terminate
 }
 
 void ReverseDeform(Mesh& src, Mesh& tar, FT lambda) {
-	Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> V1(src.V.size(), 3), V2(src.F.size(), 3);
+	Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> V1(src.V.size(), 3), V2(tar.V.size(), 3);
 	Eigen::MatrixXi	F1(src.F.size(), 3), F2(tar.F.size(), 3);
 
 	for (int i = 0; i < src.V.size(); ++i)
@@ -256,12 +256,14 @@ void ReverseDeform(Mesh& src, Mesh& tar, FT lambda) {
 		auto& F = F1;
 
 		//Move vertices
+
 		for (int i = 0; i < C.rows(); ++i) {
 			int find = I[i];
 			MatrixX weight;
 			igl::barycentric_coordinates(C.row(i), V1.row(F1(find, 0)), V1.row(F1(find, 1)), V1.row(F1(find, 2)), weight);
 			Vector3 w = weight.row(0);
 			ceres::CostFunction* cost_function = BarycentricDistanceLoss::Create(w, V2.row(i));
+
 			problem.AddResidualBlock(cost_function, 0,
 				&V1(F1(find, 0), 0),&V1(F1(find, 1), 0),&V1(F1(find, 2), 0));
 		}
@@ -295,7 +297,7 @@ void ReverseDeform(Mesh& src, Mesh& tar, FT lambda) {
 			break;
 		prev_cost = summary.final_cost;
 		step += 1;
-		if (step == 50)
+		if (step == 100)
 			break;
 	}
 

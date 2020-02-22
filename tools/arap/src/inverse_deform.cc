@@ -23,11 +23,12 @@ int main(int argc, char** argv) {
 
 	int symmetry = 0;
 	if (argc > 7) {
-		sscanf(argv[6], "%d", &symmetry);
+		sscanf(argv[7], "%d", &symmetry);
 	}
 
-	if (symmetry)
+	if (symmetry) {
 		ref.ReflectionSymmetrize();
+	}
 
 	//cad.ReadOBJ(argv[3]);
 
@@ -55,6 +56,7 @@ int main(int argc, char** argv) {
 	//ref.Normalize();
 	//src.ApplyTransform(ref);
 
+	printf("Reverse !\n");
 	ReverseDeform(src, ref, lambda);
 
 	std::cout<<"Deformed"<<std::endl;
