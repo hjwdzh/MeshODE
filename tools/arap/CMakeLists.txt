@@ -101,3 +101,13 @@ target_link_libraries(
     coverage_deform
     deform
 )
+
+add_executable(
+    inverse_deform
+    src/inverse_deform.cc
+)
+
+target_link_libraries(
+    inverse_deform
+    deform
+)

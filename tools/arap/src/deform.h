@@ -9,5 +9,6 @@
 void Deform(Mesh& mesh, UniformGrid& grid, FT lambda = 1, TerminateWhenSuccessCallback* callback = 0);
 void DeformWithRot(Mesh& mesh, UniformGrid& grid, FT lambda = 1, TerminateWhenSuccessCallback* callback = 0);
 void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda = 1, TerminateWhenSuccessCallback* callback = 0);
+void ReverseDeform(Mesh& src, Mesh& tar, FT lambda = 1);
 
 #endif

@@ -7,7 +7,12 @@ typedef void (*callback_function)(void);
 
 class TerminateWhenSuccessCallback : public ceres::IterationCallback{
 public:
-	explicit TerminateWhenSuccessCallback(callback_function func_)
+	TerminateWhenSuccessCallback()
+	{
+		func = 0;
+		counter = 0;
+	}
+	TerminateWhenSuccessCallback(callback_function func_)
 	{
 		func = func_;
 		counter = 0;
@@ -16,7 +21,7 @@ public:
 	ceres::CallbackReturnType operator()(const ceres::IterationSummary& summary) {
 		if (summary.step_is_successful) {
 			if (counter == 0) {
-				func();
+				if (func) func();
 				counter = 1;
 				return ceres::SOLVER_CONTINUE;
 			}

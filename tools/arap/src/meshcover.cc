@@ -26,8 +26,15 @@ void MeshCover::Cover(Mesh& watertight, Subdivision& sub) {
 	Eigen::VectorXi I;
 	MatrixX C;
 
+	auto t1 = std::chrono::high_resolution_clock::now();
 	igl::point_mesh_squared_distance(V1,V2,F2,sqrD,I,C);
+	auto t2 = std::chrono::high_resolution_clock::now();
 
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+
+    std::cout << duration << "\n";
+
+	exit(0);
 	findices.clear();
 	weights.clear();
 	for (int i = 0; i < I.size(); ++i) {
