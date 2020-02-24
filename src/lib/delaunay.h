@@ -3,9 +3,8 @@
 
 #include <Eigen/Core>
 
-void delaunay(Eigen::MatrixXd& V, Eigen::MatrixXi& F);
-void delaunay3d(Eigen::MatrixXd& V, std::vector<std::pair<int, int> >& edges);
+void Delaunay2D(Eigen::MatrixXd& V, Eigen::MatrixXi& F);
 
-void delaunay_with_boundary(Eigen::MatrixXd& V, Eigen::MatrixXi& F, std::vector<std::pair<int, int> >& boundary_edges);
+void Delaunay3D(Eigen::MatrixXd& V, std::vector<std::pair<int, int> >& edges);
 
 #endif

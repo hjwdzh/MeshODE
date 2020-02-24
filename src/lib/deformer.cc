@@ -1,4 +1,4 @@
-#include "deform.h"
+#include "deformer.h"
 
 #include <ceres/ceres.h>
 #include <igl/point_mesh_squared_distance.h>
@@ -6,7 +6,20 @@
 #include "distanceloss.h"
 #include "edgeloss.h"
 
-void Deform(Mesh& mesh, UniformGrid& grid, FT lambda, TerminateWhenSuccessCallback* callback) {
+Deformer::Deformer(FT lambda, CallBackFunc func)
+: lambda_(lambda), callback_(0)
+{
+	if (func != 0)
+		callback_ = std::shared_ptr<TerminateWhenSuccessCallback>(
+			new TerminateWhenSuccessCallback(func));
+}
+
+
+void Deformer::Deform(Mesh& mesh, UniformGrid& grid) {
+
+	FT lambda = lambda_;
+	TerminateWhenSuccessCallback* callback =
+		callback_ == 0 ? 0 : &(*callback_);
 	auto& V = mesh.V;
 	auto& F = mesh.F;
 	
@@ -17,7 +30,8 @@ void Deform(Mesh& mesh, UniformGrid& grid, FT lambda, TerminateWhenSuccessCallba
 	v_block_ids.reserve(V.size());
 	for (int i = 0; i < V.size(); ++i) {
 		ceres::CostFunction* cost_function = DistanceLoss::Create(&grid);
-		ceres::ResidualBlockId block_id = problem.AddResidualBlock(cost_function, 0, V[i].data());
+		ceres::ResidualBlockId block_id = problem.AddResidualBlock(
+			cost_function, 0, V[i].data());
 		v_block_ids.push_back(block_id);			
 	}
 
@@ -28,7 +42,11 @@ void Deform(Mesh& mesh, UniformGrid& grid, FT lambda, TerminateWhenSuccessCallba
 		for (int j = 0; j < 3; ++j) {
 			Vector3 v = (V[F[i][j]] - V[F[i][(j + 1) % 3]]);
 			ceres::CostFunction* cost_function = EdgeLoss::Create(v, lambda);
-			ceres::ResidualBlockId block_id = problem.AddResidualBlock(cost_function, 0, V[F[i][j]].data(), V[F[i][(j + 1) % 3]].data());
+			ceres::ResidualBlockId block_id = problem.AddResidualBlock(
+				cost_function, 0,
+				V[F[i][j]].data(),
+				V[F[i][(j + 1) % 3]].data()
+			);
 			edge_block_ids.push_back(block_id);
 		}
 	}
@@ -72,7 +90,11 @@ void Deform(Mesh& mesh, UniformGrid& grid, FT lambda, TerminateWhenSuccessCallba
 	std::cout<<"Final cost: "<<final_cost<<std::endl;
 }
 
-void DeformWithRot(Mesh& mesh, UniformGrid& grid, FT lambda, TerminateWhenSuccessCallback* callback) {
+void Deformer::DeformWithRot(Mesh& mesh, UniformGrid& grid) {
+
+	FT lambda = lambda_;
+	TerminateWhenSuccessCallback* callback =
+		callback_ == 0 ? 0 : &(*callback_);
 	auto& V = mesh.V;
 	auto& F = mesh.F;
 	
@@ -83,7 +105,8 @@ void DeformWithRot(Mesh& mesh, UniformGrid& grid, FT lambda, TerminateWhenSucces
 	v_block_ids.reserve(V.size());
 	for (int i = 0; i < V.size(); ++i) {
 		ceres::CostFunction* cost_function = DistanceLoss::Create(&grid);
-		ceres::ResidualBlockId block_id = problem.AddResidualBlock(cost_function, 0, V[i].data());
+		ceres::ResidualBlockId block_id =
+			problem.AddResidualBlock(cost_function, 0, V[i].data());
 		v_block_ids.push_back(block_id);			
 	}
 
@@ -94,8 +117,10 @@ void DeformWithRot(Mesh& mesh, UniformGrid& grid, FT lambda, TerminateWhenSucces
 	for (int i = 0; i < F.size(); ++i) {
 		for (int j = 0; j < 3; ++j) {
 			Vector3 v = (V[F[i][j]] - V[F[i][(j + 1) % 3]]);
-			ceres::CostFunction* cost_function = EdgeLossWithRot::Create(v, lambda);
-			ceres::ResidualBlockId block_id = problem.AddResidualBlock(cost_function, 0,
+			ceres::CostFunction* cost_function =
+				EdgeLossWithRot::Create(v, lambda);
+			ceres::ResidualBlockId block_id = problem.AddResidualBlock(
+				cost_function, 0,
 				V[F[i][j]].data(),
 				V[F[i][(j + 1) % 3]].data(),
 				rots.data() + F[i][j] * 3,
@@ -143,7 +168,11 @@ void DeformWithRot(Mesh& mesh, UniformGrid& grid, FT lambda, TerminateWhenSucces
 	std::cout<<"Final cost: "<<final_cost<<std::endl;
 }
 
-void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda, TerminateWhenSuccessCallback* callback) {
+void Deformer::DeformSubdivision(Subdivision& sub, UniformGrid& grid) {
+
+	FT lambda = lambda_;
+	TerminateWhenSuccessCallback* callback =
+		callback_ == 0 ? 0 : &(*callback_);
 	auto& mesh = sub.subdivide_mesh;
 	auto& V = mesh.V;
 	auto& F = mesh.F;
@@ -155,7 +184,8 @@ void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda, Terminate
 	v_block_ids.reserve(V.size());
 	for (int i = 0; i < V.size(); ++i) {
 		ceres::CostFunction* cost_function = DistanceLoss::Create(&grid);
-		ceres::ResidualBlockId block_id = problem.AddResidualBlock(cost_function, 0, V[i].data());
+		ceres::ResidualBlockId block_id = problem.AddResidualBlock(
+			cost_function, 0, V[i].data());
 		v_block_ids.push_back(block_id);			
 	}
 
@@ -168,16 +198,25 @@ void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda, Terminate
 		int v1 = p.first;
 		int v2 = p.second;
 		Vector3 v = (V[v1] - V[v2]);
-		ceres::CostFunction* cost_function = AdaptiveEdgeLoss::Create(v, lambda);
-		ceres::ResidualBlockId block_id = problem.AddResidualBlock(cost_function, 0, V[v1].data(), V[v2].data());
+		ceres::CostFunction* cost_function =
+			AdaptiveEdgeLoss::Create(v, lambda);
+		ceres::ResidualBlockId block_id = problem.AddResidualBlock(
+			cost_function, 0, V[v1].data(), V[v2].data());
 		edge_block_ids.push_back(block_id);
 	}
 
 	for (int i = 0; i < F.size(); ++i) {
 		for (int j = 0; j < 3; ++j) {
 			Vector3 v = (V[F[i][j]] - V[F[i][(j + 1) % 3]]);
-			ceres::CostFunction* cost_function = AdaptiveEdgeLoss::Create(v, lambda);
-			ceres::ResidualBlockId block_id = problem.AddResidualBlock(cost_function, 0, V[F[i][j]].data(), V[F[i][(j + 1) % 3]].data());
+			
+			ceres::CostFunction* cost_function =
+				AdaptiveEdgeLoss::Create(v, lambda);
+			
+			ceres::ResidualBlockId block_id = problem.AddResidualBlock(
+				cost_function, 0,
+				V[F[i][j]].data(),
+				V[F[i][(j + 1) % 3]].data());
+
 			edge_block_ids.push_back(block_id);
 		}
 	}
@@ -221,8 +260,12 @@ void DeformSubdivision(Subdivision& sub, UniformGrid& grid, FT lambda, Terminate
 	std::cout<<"Final cost: "<<final_cost<<std::endl;	
 }
 
-void ReverseDeform(Mesh& src, Mesh& tar, FT lambda) {
-	Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> V1(src.V.size(), 3), V2(tar.V.size(), 3);
+void Deformer::ReverseDeform(Mesh& src, Mesh& tar) {
+	FT lambda = lambda_;
+
+	typedef Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+		MatrixRowMajor;
+	MatrixRowMajor V1(src.V.size(), 3), V2(tar.V.size(), 3);
 	Eigen::MatrixXi	F1(src.F.size(), 3), F2(tar.F.size(), 3);
 
 	for (int i = 0; i < src.V.size(); ++i)
@@ -260,9 +303,15 @@ void ReverseDeform(Mesh& src, Mesh& tar, FT lambda) {
 		for (int i = 0; i < C.rows(); ++i) {
 			int find = I[i];
 			MatrixX weight;
-			igl::barycentric_coordinates(C.row(i), V1.row(F1(find, 0)), V1.row(F1(find, 1)), V1.row(F1(find, 2)), weight);
+			igl::barycentric_coordinates(C.row(i),
+				V1.row(F1(find, 0)),
+				V1.row(F1(find, 1)),
+				V1.row(F1(find, 2)),
+				weight);
+
 			Vector3 w = weight.row(0);
-			ceres::CostFunction* cost_function = BarycentricDistanceLoss::Create(w, V2.row(i));
+			ceres::CostFunction* cost_function =
+				BarycentricDistanceLoss::Create(w, V2.row(i));
 
 			problem.AddResidualBlock(cost_function, 0,
 				&V1(F1(find, 0), 0),&V1(F1(find, 1), 0),&V1(F1(find, 2), 0));
@@ -270,15 +319,19 @@ void ReverseDeform(Mesh& src, Mesh& tar, FT lambda) {
 
 		//Enforce rigidity
 		for (int i = 0; i < V.rows(); ++i) {
-			ceres::CostFunction* cost_function = PointRegularizerLoss::Create(1e-3, Vc.row(i));
+			ceres::CostFunction* cost_function =
+				PointRegularizerLoss::Create(1e-3, Vc.row(i));
 			problem.AddResidualBlock(cost_function, 0, &(V(i,0)));
 		}
 
 		for (int i = 0; i < F.rows(); ++i) {
 			for (int j = 0; j < 3; ++j) {
 				Vector3 v = (Vc.row(F(i,j)) - Vc.row(F(i,(j + 1) % 3)));
-				ceres::CostFunction* cost_function = EdgeLoss::Create(v, lambda);
-				problem.AddResidualBlock(cost_function, 0, &V(F(i,j),0), &V(F(i,(j + 1) % 3),0));
+				ceres::CostFunction* cost_function =
+					EdgeLoss::Create(v, lambda);
+				problem.AddResidualBlock(cost_function, 0,
+					&V(F(i,j),0),
+					&V(F(i,(j + 1) % 3),0));
 			}
 		}
 
@@ -301,7 +354,6 @@ void ReverseDeform(Mesh& src, Mesh& tar, FT lambda) {
 			break;
 	}
 
-	printf("Step used %d\n", step);
 	for (int i = 0; i < src.V.size(); ++i)
 		src.V[i] = V1.row(i);
 }

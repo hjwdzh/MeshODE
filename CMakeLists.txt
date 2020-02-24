@@ -20,8 +20,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/lib)
 add_library(
     deform SHARED
     src/lib/callback.h
-    src/lib/deform.cc
-    src/lib/deform.h
+    src/lib/deformer.cc
+    src/lib/deformer.h
     src/lib/delaunay.cc
     src/lib/delaunay.h
     src/lib/mesh.cc
@@ -74,16 +74,6 @@ target_link_libraries(
     ${CERES_LIBRARIES}
     gmp
     ${CGAL_LIBRARIES}
-)
-
-add_executable(
-    reverse_deform
-    src/app/reverse_deform.cc
-)
-
-target_link_libraries(
-    reverse_deform
-    deform
 )
 
 add_executable(

@@ -138,7 +138,7 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 		for (int j = 0; j < 3; ++j) {
 			boundary_indices[j] = edge_subdivision_indices[hash[j]];
 		}
-		DelaunaySubdivision(boundary_indices, V, F, faces_buffer[i], len_thres, i == 9);
+		DelaunaySubdivision(boundary_indices, V, F, faces_buffer[i], len_thres);
 
 		for (int j = vsize; j < V.size(); ++j)
 			vertex_component.push_back(colors[i].first);
@@ -163,7 +163,8 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 			right_idx += 1;
 		}
 
-		SubdivideFaces(V, F, parent_faces, faces_buffer, left_idx, right_idx, max_len, len_thres);
+		SubdivideFaces(V, F, parent_faces, faces_buffer,
+			left_idx, right_idx, max_len, len_thres);
 		connected_component_segments.push_back(F.size());
 		left_idx = right_idx;
 	}
@@ -191,7 +192,7 @@ void Subdivision::DelaunaySubdivision(
 	std::vector<Vector3>& V,
 	std::vector<Eigen::Vector3i>& F,
 	Eigen::Vector3i& face,
-	double len_thres, bool debug) {
+	double len_thres) {
 
 	Eigen::Vector3d v0 = V[face[0]];
 	Eigen::Vector3d v1 = V[face[1]];
@@ -220,7 +221,8 @@ void Subdivision::DelaunaySubdivision(
 	std::vector<Eigen::Vector3d> points;
 	auto c = (v0 + v1 + v2) / 3.0;
 
-	double max_len = std::max((c - v0).norm(), std::max((c - v1).norm(), (c - v2).norm()));
+	double max_len = std::max((c - v0).norm(),
+		std::max((c - v1).norm(), (c - v2).norm()));
 
 	int min_axis = 0;
 	for (int i = 1; i < 3; ++i) {
@@ -259,10 +261,15 @@ void Subdivision::DelaunaySubdivision(
 	for (int py = minY; py <= maxY; ++py) {
 		for (int px = minX; px <= maxX; ++px) {
 			double w1, w2, w3;
-			calculateBarycentricCoordinate(v0x, v0y, v1x, v1y, v2x, v2y, px, py, w1, w2, w3);
+			calculateBarycentricCoordinate(v0x, v0y, v1x, v1y, v2x, v2y,
+				px, py, w1, w2, w3);
 
-			if (w1 > 0.0 && w1 < 1.0 && w2 > 0.0 && w2 < 1.0 && w3 > 0.0 && w3 < 1.0) {
-				Vector3 rand_p = v0 + tx * (px * len_thres) + ty * (py * len_thres);
+			if (w1 > 0.0 && w1 < 1.0 &&
+				w2 > 0.0 && w2 < 1.0 &&
+				w3 > 0.0 && w3 < 1.0) {
+				Vector3 rand_p = v0
+							   + tx * (px * len_thres)
+							   + ty * (py * len_thres);
 				vindices.push_back(V.size());
 				V.push_back(rand_p);
 				points.push_back(rand_p);
@@ -280,7 +287,7 @@ void Subdivision::DelaunaySubdivision(
 
 	Eigen::MatrixXi F2D;
 
-	delaunay(V2D, F2D);
+	Delaunay2D(V2D, F2D);
 	for (int i = 0; i < F2D.rows(); ++i) {
 		int v[3];
 		v[0] = vindices[F2D(i, 0)];
@@ -292,7 +299,6 @@ void Subdivision::DelaunaySubdivision(
 			for (int k = j + 1; k < 3; ++k) {
 				if ((V[v[j]] - V[v[k]]).norm() > 3 * len_thres) {
 					boundary_triangle = true;
-					printf("Boundary!\n");
 				}
 			}
 		}
@@ -308,7 +314,8 @@ void Subdivision::ComputeGeometryNeighbors(double thres) {
 	double step = thres;
 
 	auto make_key = [&](const Vector3& v) {
-		return std::make_pair(int(v[0]/step), std::make_pair(int(v[1]/step), int(v[2]/step)));
+		return std::make_pair(int(v[0]/step),
+			std::make_pair(int(v[1]/step), int(v[2]/step)));
 	};
 
 	Vector3 diff[8] = {Vector3(0,0,0),
@@ -320,7 +327,9 @@ void Subdivision::ComputeGeometryNeighbors(double thres) {
 		Vector3(step,step,0),
 		Vector3(step,step,step)};
 
-	std::map<std::pair<int, std::pair<int, int> >, std::unordered_set<int> > grids;
+	std::map<std::pair<int, std::pair<int, int> >,
+		std::unordered_set<int> > grids;
+		
 	for (int i = 0; i < vertices.size(); ++i) {
 		for (int j = 0; j < 8; ++j) {
 			auto v = vertices[i] + diff[j];
@@ -363,7 +372,7 @@ void Subdivision::ComputeGeometryNeighbors(double thres) {
 		}
 
 		std::vector<std::pair<int, int> > gridE;
-		delaunay3d(gridV, gridE);
+		Delaunay3D(gridV, gridE);
 		count += gridE.size();
 		for (auto& e : gridE) {
 			int v1 = vindices[e.first];

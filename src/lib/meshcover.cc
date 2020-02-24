@@ -30,7 +30,8 @@ void MeshCover::Cover(Mesh& watertight, Subdivision& sub) {
 	igl::point_mesh_squared_distance(V1,V2,F2,sqrD,I,C);
 	auto t2 = std::chrono::high_resolution_clock::now();
 
-	auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
+	auto duration =
+		std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
 
     std::cout << duration << "\n";
 
@@ -73,7 +74,9 @@ void MeshCover::UpdateCover(Mesh& watertight, Subdivision& sub) {
 		const Vector3& v1 = watertight.V[f[1]];
 		const Vector3& v2 = watertight.V[f[2]];
 
-		Vector3 v = v0 * weights[i][0] + v1 * weights[i][1] + v2 * weights[i][2];
+		Vector3 v = v0 * weights[i][0]
+				  + v1 * weights[i][1]
+				  + v2 * weights[i][2];
 
 		add_entry_A(i, i, 1);
 		add_entry_B(i, v);
@@ -110,7 +113,8 @@ void MeshCover::UpdateCover(Mesh& watertight, Subdivision& sub) {
 	Eigen::SparseMatrix<FT> A(num_entries, num_entries);
 	std::vector<T> tripletList;
 	for (auto& m : trips) {
-		tripletList.push_back(T(m.first / num_entries, m.first % num_entries, m.second));
+		tripletList.push_back(
+			T(m.first / num_entries, m.first % num_entries, m.second));
 	}
 	A.setFromTriplets(tripletList.begin(), tripletList.end());
 

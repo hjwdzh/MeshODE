@@ -27,7 +27,7 @@ protected:
 		std::vector<Vector3>& V,
 		std::vector<Eigen::Vector3i>& F,
 		Eigen::Vector3i& face,
-		double len_thres, bool debug);
+		double len_thres);
 	void SubdivideFaces(std::vector<Vector3>& V,
 		std::vector<Eigen::Vector3i>& F,
 		std::vector<int>& parent_faces,

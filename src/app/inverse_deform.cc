@@ -1,7 +1,7 @@
 #include <chrono>
 #include <iostream>
 
-#include "deform.h"
+#include "deformer.h"
 #include "mesh.h"
 #include "meshcover.h"
 #include "uniformgrid.h"
@@ -14,11 +14,13 @@ int MESH_RESOLUTION = 5000;
 int main(int argc, char** argv) {	
 
 	if (argc < 5) {
-		printf("./deform source.obj reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0]\n");
+		printf("./deform source.obj reference.obj output.obj "
+			"[GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] "
+			"[lambda=1] [symmetry=0]\n");
 		return 0;
 	}
-	//Deform source to fit the reference
 
+	//Deform source to fit the reference
 	auto start = std::chrono::steady_clock::now();
 	Mesh src, ref, cad;
 	src.ReadOBJ(argv[1]);
@@ -32,16 +34,6 @@ int main(int argc, char** argv) {
 	if (symmetry) {
 		ref.ReflectionSymmetrize();
 	}
-
-	//cad.ReadOBJ(argv[3]);
-
-	//MeshCover shell;
-	//shell.Cover(src, cad);
-
-	//shell.cover.WriteOBJ("debug.obj");
-
-	//src = shell.cover;
-	//return 0;
 	if (argc > 4)
 		sscanf(argv[4], "%d", &GRID_RESOLUTION);
 
@@ -51,16 +43,19 @@ int main(int argc, char** argv) {
 	FT lambda = 1;
 	if (argc > 6)
 		sscanf(argv[6], "%lf", &lambda);
-	printf("lambda %lf\n", lambda);
+
 	//Get number of vertices and faces
-	std::cout<<"Source:\t\t"<<"Num vertices: "<<src.V.size()<<"\tNum faces: "<<src.F.size()<<std::endl;
-	std::cout<<"Reference:\t"<<"Num vertices: "<<ref.V.size()<<"\tNum faces: "<<ref.F.size()<<std::endl<<std::endl;
+	std::cout << "Source:\t\t" << "Num vertices: " << cad.V.size()
+		<< "\tNum faces: " << cad.F.size() << std::endl;
+	std::cout<<"Reference:\t" << "Num vertices: " <<ref.V.size()
+		<< "\tNum faces: " << ref.F.size() <<std::endl <<std::endl;
 
 	//ref.Normalize();
 	//src.ApplyTransform(ref);
 
 	printf("Reverse !\n");
-	ReverseDeform(src, ref, lambda);
+	Deformer deform(lambda);
+	deform.ReverseDeform(src, ref);
 
 	std::cout<<"Deformed"<<std::endl;
 
@@ -68,7 +63,8 @@ int main(int argc, char** argv) {
 	auto end = std::chrono::steady_clock::now();
 
 	std::cout << "Elapsed time in seconds : " 
-		<< std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+		<< std::chrono::duration_cast
+			<std::chrono::milliseconds>(end - start).count()
 		<< " sec!\n";
 	return 0;
 }

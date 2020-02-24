@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "callback.h"
-#include "deform.h"
+#include "deformer.h"
 #include "mesh.h"
 #include "meshcover.h"
 #include "subdivision.h"
@@ -21,7 +21,9 @@ void callback()
 // main function
 int main(int argc, char** argv) {	
 	if (argc < 5) {
-		printf("./deform cad.obj reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0] [flow_output=filename]\n");
+		printf("./deform cad.obj reference.obj output.obj "
+			"[GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] "
+			"[lambda=1] [symmetry=0] [flow_output=filename]\n");
 		return 0;
 	}
 	//Deform source to fit the reference
@@ -58,19 +60,18 @@ int main(int argc, char** argv) {
 	FT lambda = 1;
 	if (argc > 6)
 		sscanf(argv[6], "%lf", &lambda);
-	printf("lambda %lf\n", lambda);
+
 	//Get number of vertices and faces
-	std::cout<<"Source:\t\t"<<"Num vertices: "<<cad.V.size()<<"\tNum faces: "<<cad.F.size()<<std::endl;
-	std::cout<<"Reference:\t"<<"Num vertices: "<<ref.V.size()<<"\tNum faces: "<<ref.F.size()<<std::endl<<std::endl;
+	std::cout << "Source:\t\t" << "Num vertices: " << cad.V.size()
+		<< "\tNum faces: " << cad.F.size() << std::endl;
+	std::cout<<"Reference:\t" << "Num vertices: " <<ref.V.size()
+		<< "\tNum faces: " << ref.F.size() <<std::endl <<std::endl;
 
 	UniformGrid grid(GRID_RESOLUTION);
 	ref.Normalize();
 	sub.subdivide_mesh.ApplyTransform(ref);
 	ref.ConstructDistanceField(grid);
-	//sub.subdivide_mesh.WriteOBJ("debug.obj");
-	//ref.WriteOBJ("debug1.obj");
-	//src.HierarchicalDeform(grid);
-	//Deform(src, grid, lambda);
+
 	int need_callback = 0;
 	std::string flow_file = "";
 	if (argc > 8) {
@@ -79,18 +80,21 @@ int main(int argc, char** argv) {
 	}
 
 	if (!need_callback) {
-		DeformSubdivision(sub, grid, lambda);
+		Deformer deformer(lambda);
+		deformer.DeformSubdivision(sub, grid);
 	} else {
-		TerminateWhenSuccessCallback tc(callback);
+		Deformer deformer(lambda, callback);
+
 		vertex_pointer = &sub.subdivide_mesh.V;
-		DeformSubdivision(sub, grid, lambda, &tc);
+		deformer.DeformSubdivision(sub, grid);
 		flow.push_back(*vertex_pointer);
 
 		std::ofstream os(flow_file);
 		int top = 1;
 		for (int i = 0; i < flow[0].size(); ++i) {
 			for (int j = 0; j < flow.size(); ++j) {
-				auto v = flow[j][i] * sub.subdivide_mesh.scale + sub.subdivide_mesh.pos;
+				auto v = flow[j][i] * sub.subdivide_mesh.scale
+					+ sub.subdivide_mesh.pos;
 				os << "v " << v[0] << " " << v[1] << " " << v[2] << "\n";
 			}
 			for (int j = 0; j < flow.size() - 1; ++j) {
@@ -102,10 +106,6 @@ int main(int argc, char** argv) {
 	}
 	std::cout<<"Deformed"<<std::endl;
 
-	//std::cout << sub.subdivide_mesh.F.size() << "\n";
-	//sub.SmoothInternal();
-	//std::cout << sub.subdivide_mesh.F.size() << "\n";
-	//cover.UpdateCover(src, sub);
 	sub.subdivide_mesh.WriteOBJ(argv[3]);
 	return 0;
 }

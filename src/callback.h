@@ -9,35 +9,31 @@ class TerminateWhenSuccessCallback : public ceres::IterationCallback{
 public:
 	TerminateWhenSuccessCallback()
 	{
-		func_ = 0;
-		counter_ = 0;
+		func = 0;
+		counter = 0;
 	}
-	TerminateWhenSuccessCallback(CallBackFunc func)
+	TerminateWhenSuccessCallback(CallBackFunc func_)
 	{
-		func_ = func;
-		counter_ = 0;
+		func = func_;
+		counter = 0;
 	}
 	~TerminateWhenSuccessCallback() {}
-
 	ceres::CallbackReturnType operator()(const ceres::IterationSummary& summary)
 	{
 		if (summary.step_is_successful) {
-			if (counter_ == 0) {
-				if (func_)
-					func_();
-				counter_ = 1;
+			if (counter == 0) {
+				if (func) func();
+				counter = 1;
 				return ceres::SOLVER_CONTINUE;
 			}
-			counter_ = 0;
+			counter = 0;
 			return ceres::SOLVER_TERMINATE_SUCCESSFULLY;
 		}
 
 		return ceres::SOLVER_CONTINUE;
 	}
-
-private:
-	CallBackFunc func_;
-	int counter_;
+	CallBackFunc func;
+	int counter;
 };
 
 #endif
