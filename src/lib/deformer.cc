@@ -15,13 +15,14 @@ Deformer::Deformer(FT lambda, CallBackFunc func)
 }
 
 
-void Deformer::Deform(Mesh& mesh, UniformGrid& grid) {
+void Deformer::Deform(const UniformGrid& grid, Mesh* pmesh) {
 
+	Mesh& mesh = *pmesh;
 	FT lambda = lambda_;
 	TerminateWhenSuccessCallback* callback =
 		callback_ == 0 ? 0 : &(*callback_);
-	auto& V = mesh.V;
-	auto& F = mesh.F;
+	auto& V = mesh.GetV();
+	auto& F = mesh.GetF();
 	
 	ceres::Problem problem;
 
@@ -90,13 +91,14 @@ void Deformer::Deform(Mesh& mesh, UniformGrid& grid) {
 	std::cout<<"Final cost: "<<final_cost<<std::endl;
 }
 
-void Deformer::DeformWithRot(Mesh& mesh, UniformGrid& grid) {
+void Deformer::DeformWithRot(const UniformGrid& grid, Mesh* pmesh) {
 
+	Mesh& mesh = *pmesh;
 	FT lambda = lambda_;
 	TerminateWhenSuccessCallback* callback =
 		callback_ == 0 ? 0 : &(*callback_);
-	auto& V = mesh.V;
-	auto& F = mesh.F;
+	auto& V = mesh.GetV();
+	auto& F = mesh.GetF();
 	
 	ceres::Problem problem;
 
@@ -168,14 +170,15 @@ void Deformer::DeformWithRot(Mesh& mesh, UniformGrid& grid) {
 	std::cout<<"Final cost: "<<final_cost<<std::endl;
 }
 
-void Deformer::DeformSubdivision(Subdivision& sub, UniformGrid& grid) {
+void Deformer::DeformSubdivision(const UniformGrid& grid, Subdivision* psub) {
 
+	Subdivision& sub = *psub;
 	FT lambda = lambda_;
 	TerminateWhenSuccessCallback* callback =
 		callback_ == 0 ? 0 : &(*callback_);
 	auto& mesh = sub.subdivide_mesh;
-	auto& V = mesh.V;
-	auto& F = mesh.F;
+	auto& V = mesh.GetV();
+	auto& F = mesh.GetF();
 	
 	ceres::Problem problem;
 
@@ -260,25 +263,32 @@ void Deformer::DeformSubdivision(Subdivision& sub, UniformGrid& grid) {
 	std::cout<<"Final cost: "<<final_cost<<std::endl;	
 }
 
-void Deformer::ReverseDeform(Mesh& src, Mesh& tar) {
+void Deformer::ReverseDeform(const Mesh& tar, Mesh* psrc) {
+	Mesh& src = *psrc;
 	FT lambda = lambda_;
 
 	typedef Eigen::Matrix<FT, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 		MatrixRowMajor;
-	MatrixRowMajor V1(src.V.size(), 3), V2(tar.V.size(), 3);
-	Eigen::MatrixXi	F1(src.F.size(), 3), F2(tar.F.size(), 3);
 
-	for (int i = 0; i < src.V.size(); ++i)
-		V1.row(i) = src.V[i];
+	auto& src_V = src.GetV();
+	auto& src_F = src.GetF();
+	auto& tar_V = tar.GetV();
+	auto& tar_F = tar.GetF();
+	
+	MatrixRowMajor V1(src_V.size(), 3), V2(tar_V.size(), 3);
+	Eigen::MatrixXi	F1(src_F.size(), 3), F2(tar_F.size(), 3);
 
-	for (int i = 0; i < tar.V.size(); ++i)
-		V2.row(i) = tar.V[i];
+	for (int i = 0; i < src_V.size(); ++i)
+		V1.row(i) = src_V[i];
 
-	for (int i = 0; i < src.F.size(); ++i)
-		F1.row(i) = src.F[i];
+	for (int i = 0; i < tar_V.size(); ++i)
+		V2.row(i) = tar_V[i];
 
-	for (int i = 0; i < tar.F.size(); ++i)
-		F2.row(i) = tar.F[i];
+	for (int i = 0; i < src_F.size(); ++i)
+		F1.row(i) = src_F[i];
+
+	for (int i = 0; i < tar_F.size(); ++i)
+		F2.row(i) = tar_F[i];
 
 	TerminateWhenSuccessCallback callback;
 
@@ -354,6 +364,6 @@ void Deformer::ReverseDeform(Mesh& src, Mesh& tar) {
 			break;
 	}
 
-	for (int i = 0; i < src.V.size(); ++i)
-		src.V[i] = V1.row(i);
+	for (int i = 0; i < src_V.size(); ++i)
+		src_V[i] = V1.row(i);
 }

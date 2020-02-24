@@ -14,7 +14,7 @@ int MESH_RESOLUTION = 5000;
 int main(int argc, char** argv) {	
 
 	if (argc < 5) {
-		printf("./deform source.obj reference.obj output.obj "
+		printf("./inverse_deform source.obj reference.obj output.obj "
 			"[GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] "
 			"[lambda=1] [symmetry=0]\n");
 		return 0;
@@ -45,17 +45,17 @@ int main(int argc, char** argv) {
 		sscanf(argv[6], "%lf", &lambda);
 
 	//Get number of vertices and faces
-	std::cout << "Source:\t\t" << "Num vertices: " << cad.V.size()
-		<< "\tNum faces: " << cad.F.size() << std::endl;
-	std::cout<<"Reference:\t" << "Num vertices: " <<ref.V.size()
-		<< "\tNum faces: " << ref.F.size() <<std::endl <<std::endl;
+	std::cout << "Source:\t\t" << "Num vertices: " << src.GetV().size()
+		<< "\tNum faces: " << src.GetF().size() << std::endl;
+	std::cout<<"Reference:\t" << "Num vertices: " <<ref.GetV().size()
+		<< "\tNum faces: " << ref.GetF().size() <<std::endl <<std::endl;
 
 	//ref.Normalize();
 	//src.ApplyTransform(ref);
 
 	printf("Reverse !\n");
 	Deformer deform(lambda);
-	deform.ReverseDeform(src, ref);
+	deform.ReverseDeform(ref, &src);
 
 	std::cout<<"Deformed"<<std::endl;
 

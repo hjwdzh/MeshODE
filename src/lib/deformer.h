@@ -14,13 +14,13 @@ public:
 
 	Deformer(FT lambda = (FT)1.0, CallBackFunc func = 0);
 
-	void Deform(Mesh& mesh, UniformGrid& grid);
+	void Deform(const UniformGrid& grid, Mesh* mesh);
 
-	void DeformWithRot(Mesh& mesh, UniformGrid& grid);
+	void DeformWithRot(const UniformGrid& grid, Mesh* mesh);
 
-	void DeformSubdivision(Subdivision& sub, UniformGrid& grid);
+	void DeformSubdivision(const UniformGrid& grid, Subdivision* sub);
 
-	void ReverseDeform(Mesh& src, Mesh& tar);
+	void ReverseDeform(const Mesh& tar, Mesh* src);
 
 private:
 	FT lambda_;

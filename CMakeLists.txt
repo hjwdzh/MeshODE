@@ -26,8 +26,6 @@ add_library(
     src/lib/delaunay.h
     src/lib/mesh.cc
     src/lib/mesh.h
-    src/lib/meshcover.cc
-    src/lib/meshcover.h
     src/lib/subdivision.cc
     src/lib/subdivision.h
     src/lib/uniformgrid.cc
@@ -72,7 +70,6 @@ target_link_libraries(
     cad_deform
     deform
     ${CERES_LIBRARIES}
-    gmp
     ${CGAL_LIBRARIES}
 )
 

@@ -12,13 +12,13 @@ int MESH_RESOLUTION = 5000;
 // main function
 int main(int argc, char** argv) {	
 	if (argc < 5) {
-		printf("./deform source.obj reference.obj cad.obj output.obj "
+		printf("./rigid_rot_deform source.obj reference.obj output.obj "
 			"[GRID_RESOLUTION=64] [MESH_RESOLUTION=5000]\n");
 		return 0;
 	}
 
 	//Deform source to fit the reference
-	Mesh src, ref, cad;
+	Mesh src, ref;
 	src.ReadOBJ(argv[1]);
 	ref.ReadOBJ(argv[2]);
 
@@ -33,10 +33,10 @@ int main(int argc, char** argv) {
 		sscanf(argv[6], "%lf", &lambda);
 
 	//Get number of vertices and faces
-	std::cout << "Source:\t\t" << "Num vertices: " << cad.V.size()
-		<< "\tNum faces: " << cad.F.size() << std::endl;
-	std::cout<<"Reference:\t" << "Num vertices: " <<ref.V.size()
-		<< "\tNum faces: " << ref.F.size() <<std::endl <<std::endl;
+	std::cout << "Source:\t\t" << "Num vertices: " << src.GetV().size()
+		<< "\tNum faces: " << src.GetF().size() << std::endl;
+	std::cout<<"Reference:\t" << "Num vertices: " <<ref.GetV().size()
+		<< "\tNum faces: " << ref.GetF().size() <<std::endl <<std::endl;
 
 	UniformGrid grid(GRID_RESOLUTION);
 	ref.Normalize();
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 	//src.HierarchicalDeform(grid);
 
 	Deformer deform(lambda);
-	deform.DeformWithRot(src, grid);
+	deform.DeformWithRot(grid, &src);
 
 	std::cout<<"Deformed"<<std::endl;
 

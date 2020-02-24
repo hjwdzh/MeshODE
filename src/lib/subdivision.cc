@@ -41,8 +41,8 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 
 	subdivide_mesh = mesh;
 
-	auto& V = subdivide_mesh.V;
-	auto& F = subdivide_mesh.F;
+	auto& V = subdivide_mesh.GetV();
+	auto& F = subdivide_mesh.GetF();
 
 	std::unordered_set<int> boundary_vertices;
 
@@ -309,7 +309,7 @@ void Subdivision::DelaunaySubdivision(
 }
 
 void Subdivision::ComputeGeometryNeighbors(double thres) {
-	auto& vertices = subdivide_mesh.V;
+	auto& vertices = subdivide_mesh.GetV();
 
 	double step = thres;
 
@@ -329,7 +329,7 @@ void Subdivision::ComputeGeometryNeighbors(double thres) {
 
 	std::map<std::pair<int, std::pair<int, int> >,
 		std::unordered_set<int> > grids;
-		
+
 	for (int i = 0; i < vertices.size(); ++i) {
 		for (int j = 0; j < 8; ++j) {
 			auto v = vertices[i] + diff[j];
@@ -440,7 +440,7 @@ void Subdivision::SubdivideFaces(std::vector<Vector3>& V,
 
 long long Subdivision::EdgeHash(int v1, int v2, int vsize) {
 	if (vsize == -1)
-		vsize = subdivide_mesh.V.size();
+		vsize = subdivide_mesh.GetV().size();
 	if (v1 < v2)
 		return (long long)v1 * (long long)vsize + v2;
 	else
@@ -449,8 +449,8 @@ long long Subdivision::EdgeHash(int v1, int v2, int vsize) {
 
 
 void Subdivision::SmoothInternal() {
-	auto& V = subdivide_mesh.V;
-	auto& F = subdivide_mesh.F;
+	auto& V = subdivide_mesh.GetV();
+	auto& F = subdivide_mesh.GetF();
 	std::vector<std::unordered_set<int> > links(V.size());
 	for (int i = 0; i < F.size(); ++i) {
 		for (int j = 0; j < 3; ++j) {

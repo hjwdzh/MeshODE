@@ -8,10 +8,12 @@
 #include <igl/point_mesh_squared_distance.h>
 
 Mesh::Mesh()
-	: scale(1.0), pos(0, 0, 0)
+	: scale_(1.0), pos_(0, 0, 0)
 {}
 
 void Mesh::ReadOBJ(const char* filename) {
+	auto& V = V_;
+	auto& F = F_;
 	std::ifstream is(filename);
 	char buffer[256];
 	while (is.getline(buffer, 256)) {
@@ -42,11 +44,13 @@ void Mesh::ReadOBJ(const char* filename) {
 }
 
 void Mesh::WriteOBJ(const char* filename, bool normalized) {
+	auto& V = V_;
+	auto& F = F_;
 	std::ofstream os(filename);
 	for (int i = 0; i < V.size(); ++i) {
 		Vector3 v;
 		if (!normalized)
-			v = V[i] * scale + pos;
+			v = V[i] * scale_ + pos_;
 		else
 			v = V[i];
 		os << "v " << v[0] << " " << v[1] << " " << v[2] << "\n";
@@ -60,6 +64,7 @@ void Mesh::WriteOBJ(const char* filename, bool normalized) {
 }
 
 void Mesh::Normalize() {
+	auto& V = V_;
 	FT min_p[3], max_p[3];
 	for (int j = 0; j < 3; ++j) {
 		min_p[j] = 1e30;
@@ -71,12 +76,12 @@ void Mesh::Normalize() {
 				max_p[j] = V[i][j];
 		}
 	}
-	scale = std::max(max_p[0] - min_p[0],
+	scale_ = std::max(max_p[0] - min_p[0],
 		std::max(max_p[1] - min_p[1], max_p[2] - min_p[2])) * 1.1;
 	for (int j = 0; j < 3; ++j)
-		pos[j] = min_p[j] - 0.05 * scale;
+		pos_[j] = min_p[j] - 0.05 * scale_;
 	for (auto& v : V) {
-		v = (v - pos) / scale;
+		v = (v - pos_) / scale_;
 	}
 	for (int j = 0; j < 3; ++j) {
 		min_p[j] = 1e30;
@@ -91,13 +96,16 @@ void Mesh::Normalize() {
 }
 
 void Mesh::ApplyTransform(Mesh& m) {
-	pos = m.pos;
-	scale = m.scale;
+	auto& V = V_;
+	pos_ = m.GetTranslation();
+	scale_ = m.GetScale();
 	for (auto& v : V) {
-		v = (v - pos) / scale;
+		v = (v - pos_) / scale_;
 	}
 }
 void Mesh::ConstructDistanceField(UniformGrid& grid) {
+	auto& V = V_;
+	auto& F = F_;
 	int grid_n = grid.Dimension();
 	MatrixX P(grid_n * grid_n * grid_n, 3);
 	int offset = 0;
@@ -144,6 +152,8 @@ void Mesh::ConstructDistanceField(UniformGrid& grid) {
 }
 
 void Mesh::FromDistanceField(UniformGrid& grid) {
+	auto& V = V_;
+	auto& F = F_;
 	int grid_n = grid.Dimension();
 	VectorX S(grid_n * grid_n * grid_n);
 	MatrixX GV(grid_n * grid_n * grid_n, 3);
@@ -169,6 +179,8 @@ void Mesh::FromDistanceField(UniformGrid& grid) {
 }
 
 void Mesh::MergeDuplex() {
+	auto& V = V_;
+	auto& F = F_;
 	std::map<std::pair<int, std::pair<int, int> >, int> grid_map;
 	auto key = [&](const Vector3& v) {
 		return std::make_pair(v[0] * 1e6,
@@ -220,6 +232,8 @@ void Mesh::MergeDuplex() {
 }
 
 void Mesh::ReflectionSymmetrize() {
+	auto& V = V_;
+	auto& F = F_;
 	int face_num = F.size();
 	int vert_num = V.size();
 	for (int i = 0; i < vert_num; ++i) {
@@ -232,6 +246,9 @@ void Mesh::ReflectionSymmetrize() {
 }
 
 void Mesh::ComputeFaceNormals() {
+	auto& V = V_;
+	auto& F = F_;
+	auto& NF = NF_;
 	NF.resize(F.size());
 	for (auto& n : NF)
 		n = Eigen::Vector3d(0, 0, 0);
@@ -245,6 +262,9 @@ void Mesh::ComputeFaceNormals() {
 }
 
 void Mesh::ComputeVertexNormals() {
+	auto& V = V_;
+	auto& F = F_;
+	auto& NV = NV_;
 	NV.resize(V.size());
 	for (auto& n : NV)
 		n = Eigen::Vector3d(0, 0, 0);
@@ -263,6 +283,8 @@ void Mesh::ComputeVertexNormals() {
 }
 
 void Mesh::LogStatistics(const char* filename) {
+	auto& V = V_;
+	auto& F = F_;
 	std::set<std::pair<int, int> > edges;
 	int duplicate = 0;
 	int boundary = 0;
@@ -296,6 +318,8 @@ void Mesh::LogStatistics(const char* filename) {
 }
 
 void Mesh::RemoveDegenerated() {
+	auto& V = V_;
+	auto& F = F_;
 	int top = 0;
 	for (int i = 0; i < F.size(); ++i) {
 		Eigen::Vector3d v0 = V[F[i][0]];

@@ -4,7 +4,6 @@
 
 #include <igl/point_mesh_squared_distance.h>
 
-#include "deformer.h"
 #include "mesh.h"
 #include "meshcover.h"
 #include "uniformgrid.h"
@@ -16,12 +15,11 @@ int MESH_RESOLUTION = 5000;
 // main function
 int main(int argc, char** argv) {	
 	if (argc < 5) {
-		printf("./deform source.obj reference.obj output.obj "
+		printf("./coverage_deform source.obj reference.obj output.obj "
 			"[GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] "
 			"[lambda=1] [symmetry=0]\n");
 		return 0;
 	}
-	//Deform source to fit the reference
 
 	Mesh src, ref, cad;
 	src.ReadOBJ(argv[1]);
@@ -46,10 +44,10 @@ int main(int argc, char** argv) {
 		sscanf(argv[6], "%lf", &lambda);
 
 	//Get number of vertices and faces
-	std::cout << "Source:\t\t" << "Num vertices: " << cad.V.size()
-		<< "\tNum faces: " << cad.F.size() << std::endl;
-	std::cout<<"Reference:\t" << "Num vertices: " <<ref.V.size()
-		<< "\tNum faces: " << ref.F.size() <<std::endl <<std::endl;
+	std::cout << "Source:\t\t" << "Num vertices: " << src.GetV().size()
+		<< "\tNum faces: " << src.GetF().size() << std::endl;
+	std::cout<<"Reference:\t" << "Num vertices: " <<ref.GetV().size()
+		<< "\tNum faces: " << ref.GetF().size() <<std::endl <<std::endl;
 
 
 	Mesh src_copy = src;
@@ -59,30 +57,35 @@ int main(int argc, char** argv) {
 	ref_copy.ApplyTransform(src_copy);
 	ref.ApplyTransform(src_copy);
 	src_copy.ConstructDistanceField(grid);
-	//Deform(ref_copy, grid, 20.0);
 
 	MatrixX sqrD1, sqrD2;
 	Eigen::VectorXi I1, I2;
 	MatrixX C1, C2;
 
-	Eigen::MatrixXd V1(ref_copy.V.size(), 3);
-	for (int i = 0; i < ref_copy.V.size(); ++i) {
-		V1.row(i) = ref_copy.V[i];
+	auto& src_copy_V = src_copy.GetV();
+	auto& src_copy_F = src_copy.GetF();
+	auto& ref_copy_V = ref_copy.GetV();
+	auto& ref_copy_F = ref_copy.GetF();
+	auto& ref_V = ref.GetV();
+
+	Eigen::MatrixXd V1(ref_copy_V.size(), 3);
+	for (int i = 0; i < ref_copy_V.size(); ++i) {
+		V1.row(i) = ref_copy_V[i];
 	}
 
-	Eigen::MatrixXi F1(ref_copy.F.size(), 3);
-	for (int i = 0; i < ref_copy.F.size(); ++i) {
-		F1.row(i) = ref_copy.F[i];
+	Eigen::MatrixXi F1(ref_copy_F.size(), 3);
+	for (int i = 0; i < ref_copy_F.size(); ++i) {
+		F1.row(i) = ref_copy_F[i];
 	}
 
-	Eigen::MatrixXd V2(src_copy.V.size(), 3);
-	for (int i = 0; i < src_copy.V.size(); ++i) {
-		V2.row(i) = src_copy.V[i];
+	Eigen::MatrixXd V2(src_copy_V.size(), 3);
+	for (int i = 0; i < src_copy_V.size(); ++i) {
+		V2.row(i) = src_copy_V[i];
 	}
 
-	Eigen::MatrixXi F2(src_copy.F.size(), 3);
-	for (int i = 0; i < src_copy.F.size(); ++i) {
-		F2.row(i) = src_copy.F[i];
+	Eigen::MatrixXi F2(src_copy_F.size(), 3);
+	for (int i = 0; i < src_copy_F.size(); ++i) {
+		F2.row(i) = src_copy_F[i];
 	}
 
 	igl::point_mesh_squared_distance(V1,V2,F2,sqrD1,I1,C1);
@@ -91,7 +94,7 @@ int main(int argc, char** argv) {
 	
 	std::unordered_map<long long, FT> trips;
 	
-	int num_entries = src_copy.V.size();
+	int num_entries = src_copy_V.size();
 	MatrixX B = MatrixX::Zero(num_entries, 3);
 	auto add_entry_A = [&](int x, int y, FT w) {
 		long long key = (long long)x * (long long)num_entries + (long long)y;
@@ -113,12 +116,12 @@ int main(int argc, char** argv) {
 	//std::ofstream os("../scan2cad/c1/point.obj");
 	int count = 0;
 	for (int i = 0; i < C1.rows(); ++i) {
-		auto v_ref = ref_copy.V[i];
+		auto v_ref = ref_copy_V[i];
 		if (sqrt(sqrD1(i, 0)) < 0.1) {
 			int find = I1[i];
 			bool consistent = true;
 			for (int j = 0; j < 3; ++j) {
-				int vid = src_copy.F[find][j];
+				int vid = src_copy_F[find][j];
 				Eigen::Vector3d v_s = C2.row(vid);
 				if ((v_s - v_ref).norm() > 5e-2)
 					consistent = false;
@@ -133,15 +136,15 @@ int main(int argc, char** argv) {
 				for (int j = 0; j < 3; ++j) {
 					Eigen::Vector3d p0(0,0,0), p1(0,0,0);
 					for (int k = 0; k < 3; ++k) {
-						p0 += weight(0, k) * src_copy.V[F2(find, k)];
+						p0 += weight(0, k) * src_copy_V[F2(find, k)];
 					}
-					p1 = ref.V[i];
+					p1 = ref_V[i];
 					Eigen::Vector3d diff = (p0 - p1);
 					diff /= diff.norm();
-					if (std::abs(diff.dot(src_copy.NF[find])) < 0.5) {
+					if (std::abs(diff.dot(src_copy.GetNF()[find])) < 0.5) {
 						continue;
 					}
-					if (std::abs(diff.dot(ref_copy.NV[i])) < 0.5) {
+					if (std::abs(diff.dot(ref_copy.GetNV()[i])) < 0.5) {
 						continue;
 					}
 					
@@ -149,7 +152,7 @@ int main(int argc, char** argv) {
 						add_entry_A(F2(find, j), F2(find, k),
 							weight(0, j) * weight(0, k));
 					}
-					add_entry_B(F2(find, j), ref.V[i] * weight(0, j));
+					add_entry_B(F2(find, j), ref_V[i] * weight(0, j));
 
 					count += 1;
 				}
@@ -157,24 +160,24 @@ int main(int argc, char** argv) {
 		}
 	}
 	
-	for (int i = 0; i < src_copy.V.size(); ++i) {
+	for (int i = 0; i < src_copy_V.size(); ++i) {
 		add_entry_A(i, i, 1e-6);
-		add_entry_B(i, src_copy.V[i] * 1e-6);
+		add_entry_B(i, src_copy_V[i] * 1e-6);
 	}
 
 	FT regular = lambda;
-	for (int i = 0; i < src_copy.F.size(); ++i) {
+	for (int i = 0; i < src_copy_F.size(); ++i) {
 		for (int j = 0; j < 3; ++j) {
-			int v0 = src_copy.F[i][j];
-			int v1 = src_copy.F[i][(j + 1) % 3];
+			int v0 = src_copy_F[i][j];
+			int v1 = src_copy_F[i][(j + 1) % 3];
 
 			double reg = regular;
 			add_entry_A(v0, v0, reg);
 			add_entry_A(v0, v1, -reg);
 			add_entry_A(v1, v0, -reg);
 			add_entry_A(v1, v1, reg);
-			add_entry_B(v0, reg * (src_copy.V[v0] - src_copy.V[v1]));
-			add_entry_B(v1, reg * (src_copy.V[v1] - src_copy.V[v0]));
+			add_entry_B(v0, reg * (src_copy_V[v0] - src_copy_V[v1]));
+			add_entry_B(v1, reg * (src_copy_V[v1] - src_copy_V[v0]));
 		}
 	}
 
@@ -196,7 +199,7 @@ int main(int argc, char** argv) {
         VectorX result = solver.solve(B.col(j));
 
         for (int i = 0; i < result.rows(); ++i) {
-        	src_copy.V[i][j] = result[i];
+        	src_copy_V[i][j] = result[i];
         }
     }
     src_copy.WriteOBJ(argv[3]);

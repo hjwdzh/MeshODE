@@ -4,7 +4,7 @@
 #include "uniformgrid.h"
 
 struct DistanceLoss {
-	DistanceLoss(UniformGrid* grid_)
+	DistanceLoss(const UniformGrid* grid_)
 	: grid(grid_) {}
 
 	template <typename T>
@@ -17,11 +17,11 @@ struct DistanceLoss {
 
 	 // Factory to hide the construction of the CostFunction object from
 	 // the client code.
-	 static ceres::CostFunction* Create(UniformGrid* grid) {
+	 static ceres::CostFunction* Create(const UniformGrid* grid) {
 		 return (new ceres::AutoDiffCostFunction<DistanceLoss, 3, 3>(
 								 new DistanceLoss(grid)));
 	 }
-	 UniformGrid* grid;
+	 const UniformGrid* grid;
 };
 
 struct BarycentricDistanceLoss {
