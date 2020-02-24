@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 project(ARAP)
-#include_directories(/orion/u/jingweih/arap/ceres-build/ceres-solver-1.9.0/install/include)
-#link_directories(/orion/u/jingweih/arap/ceres-build/ceres-solver-1.9.0/install/lib)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -14,32 +13,27 @@ set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS}")
 set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG}")
 
 find_package(ceres REQUIRED)
-find_package(BLAS REQUIRED)
 find_package(CGAL)
 
-include_directories(/orion/u/jingweih/3rd/)
-include_directories(/orion/u/jingweih/3rd/eigen3/)
-
-include_directories(/orion/u/jingweih/3rd/cgal-install/include)
-link_directories(/orion/u/jingweih/3rd/cgal-install/lib)
 include(${CGAL_USE_FILE})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/lib)
 add_library(
     deform SHARED
-    src/callback.h
-    src/deform.cc
-    src/deform.h
-    src/delaunay.cc
-    src/delaunay.h
-    src/mesh.cc
-    src/mesh.h
-    src/meshcover.cc
-    src/meshcover.h
-    src/subdivision.cc
-    src/subdivision.h
-    src/uniformgrid.cc
-    src/uniformgrid.h
-    src/edgeloss.h
-    src/types.h
+    src/lib/callback.h
+    src/lib/deform.cc
+    src/lib/deform.h
+    src/lib/delaunay.cc
+    src/lib/delaunay.h
+    src/lib/mesh.cc
+    src/lib/mesh.h
+    src/lib/meshcover.cc
+    src/lib/meshcover.h
+    src/lib/subdivision.cc
+    src/lib/subdivision.h
+    src/lib/uniformgrid.cc
+    src/lib/uniformgrid.h
+    src/lib/edgeloss.h
+    src/lib/types.h
 )
 
 target_link_libraries(
@@ -49,7 +43,7 @@ target_link_libraries(
 
 add_executable(
     rigid_deform
-    src/rigid_deform.cc
+    src/app/rigid_deform.cc
 )
 
 target_link_libraries(
@@ -60,7 +54,7 @@ target_link_libraries(
 
 add_executable(
     rigid_rot_deform
-    src/rigid_rot_deform.cc
+    src/app/rigid_rot_deform.cc
 )
 
 target_link_libraries(
@@ -71,7 +65,7 @@ target_link_libraries(
 
 add_executable(
     cad_deform
-    src/cad_deform.cc
+    src/app/cad_deform.cc
 )
 
 target_link_libraries(
@@ -84,7 +78,7 @@ target_link_libraries(
 
 add_executable(
     reverse_deform
-    src/reverse_deform.cc
+    src/app/reverse_deform.cc
 )
 
 target_link_libraries(
@@ -94,7 +88,7 @@ target_link_libraries(
 
 add_executable(
     coverage_deform
-    src/coverage_deform.cc
+    src/app/coverage_deform.cc
 )
 
 target_link_libraries(
@@ -104,7 +98,7 @@ target_link_libraries(
 
 add_executable(
     inverse_deform
-    src/inverse_deform.cc
+    src/app/inverse_deform.cc
 )
 
 target_link_libraries(

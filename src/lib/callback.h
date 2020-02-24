@@ -3,7 +3,7 @@
 
 #include <ceres/ceres.h>
 
-typedef void (*callback_function)(void);
+typedef void (*CallBackFunc)(void);
 
 class TerminateWhenSuccessCallback : public ceres::IterationCallback{
 public:
@@ -12,7 +12,7 @@ public:
 		func = 0;
 		counter = 0;
 	}
-	TerminateWhenSuccessCallback(callback_function func_)
+	TerminateWhenSuccessCallback(CallBackFunc func_)
 	{
 		func = func_;
 		counter = 0;
@@ -31,7 +31,7 @@ public:
 
 		return ceres::SOLVER_CONTINUE;
 	}
-	callback_function func;
+	CallBackFunc func;
 	int counter;
 };
 
