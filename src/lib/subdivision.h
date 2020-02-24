@@ -14,13 +14,11 @@ public:
 	void ComputeGeometryNeighbors(double len_thres);
 
 	void SmoothInternal();
-	const Mesh* reference_mesh;
-	Mesh subdivide_mesh;
+	Mesh& GetMesh() { return subdivide_mesh_; }
+	const std::set<std::pair<int, int> >& Neighbors() const {
+		return geometry_neighbor_pairs_;
+	}
 
-	std::vector<int> parent_faces;
-	std::set<std::pair<int, int> > geometry_neighbor_pairs;
-	std::vector<int> vertex_component;
-	std::vector<int> internal_vertices;
 protected:
 	void DelaunaySubdivision(
 		std::vector<int>* boundary_indices,
@@ -28,12 +26,27 @@ protected:
 		std::vector<Eigen::Vector3i>& F,
 		Eigen::Vector3i& face,
 		double len_thres);
-	void SubdivideFaces(std::vector<Vector3>& V,
-		std::vector<Eigen::Vector3i>& F,
-		std::vector<int>& parent_faces,
-		std::vector<Eigen::Vector3i>& faces,
-		int left_idx, int right_idx, double max_len, double len_thres);
+
 	long long EdgeHash(int v1, int v2, int vsize = -1);
+
+	double calculateSignedArea2(double ax, double ay,
+		double bx, double by,
+		double cx, double cy);
+
+	void calculateBarycentricCoordinate(
+		double ax, double ay,
+		double bx, double by,
+		double cx, double cy,
+		double px, double py,
+		double& alpha, double& beta, double& gamma);
+
+private:
+	Mesh subdivide_mesh_;
+
+	std::set<std::pair<int, int> > geometry_neighbor_pairs_;
+	std::vector<int> internal_vertices_;
+
+
 };
 
 #endif

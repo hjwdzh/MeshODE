@@ -5,7 +5,6 @@
 #include <igl/point_mesh_squared_distance.h>
 
 #include "mesh.h"
-#include "meshcover.h"
 #include "uniformgrid.h"
 
 // flags

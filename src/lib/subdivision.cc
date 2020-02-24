@@ -8,39 +8,16 @@
 #include <Eigen/Dense>
 
 #include "delaunay.h"
-#define USE_DELAUNAY_SUBDIVISION
-
-double calculateSignedArea2(double ax, double ay,
-	double bx, double by,
-	double cx, double cy) {
-	return ((cx - ax) * (by - ay) - (bx - ax) * (cy - ay));
-}
-
-void calculateBarycentricCoordinate(
-	double ax, double ay,
-	double bx, double by,
-	double cx, double cy,
-	double px, double py,
-	double& alpha, double& beta, double& gamma) {
-	double beta_tri = calculateSignedArea2(ax, ay, px, py, cx, cy);
-	double gamma_tri = calculateSignedArea2(ax, ay, bx, by, px, py);
-	double tri_inv = 1.0f / calculateSignedArea2(ax, ay, bx, by, cx, cy);
-	beta = beta_tri * tri_inv;
-	gamma = gamma_tri * tri_inv;
-	alpha = 1.0 - beta - gamma;
-}
 
 Subdivision::Subdivision()
 {
-	reference_mesh = 0;
 }
 
 void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 {
-	reference_mesh = &mesh;
+	subdivide_mesh_ = mesh;
 
-	subdivide_mesh = mesh;
-
+	auto& subdivide_mesh = subdivide_mesh_;
 	auto& V = subdivide_mesh.GetV();
 	auto& F = subdivide_mesh.GetF();
 
@@ -93,24 +70,13 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 
 	std::sort(colors.begin(), colors.end());
 
-	vertex_component.resize(V.size(), 0);	
 	std::vector<Eigen::Vector3i> faces_buffer(F.size());
-	for (int i = 0; i < colors.size(); ++i) {
-		faces_buffer[i] = F[colors[i].second];
-		int v0 = faces_buffer[i][0];
-		int v1 = faces_buffer[i][1];
-		int v2 = faces_buffer[i][2];
-		vertex_component[v0] = colors[i].first;
-		vertex_component[v1] = colors[i].first;
-		vertex_component[v2] = colors[i].first;
-	}
 
 	F.clear();
-	parent_faces.clear();
 
 	int v_num = V.size();
 	int vsize = 0x7fffffff;
-#ifdef USE_DELAUNAY_SUBDIVISION
+
 	std::unordered_map<long long, std::vector<int> > edge_subdivision_indices;
 	for (int i = 0; i < faces_buffer.size(); ++i) {
 		long long hash[3];
@@ -139,51 +105,12 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 			boundary_indices[j] = edge_subdivision_indices[hash[j]];
 		}
 		DelaunaySubdivision(boundary_indices, V, F, faces_buffer[i], len_thres);
-
-		for (int j = vsize; j < V.size(); ++j)
-			vertex_component.push_back(colors[i].first);
-	}
-#else
-	std::vector<int> connected_component_segments;
-	connected_component_segments.clear();
-	connected_component_segments.push_back(0);
-
-	int left_idx = 0;
-	while (left_idx < colors.size()) {
-		double max_len = 0;
-		int fid = colors[left_idx].first;
-		int right_idx = left_idx;
-		while (right_idx < colors.size() && colors[right_idx].first == fid) {
-			for (int j = 0; j < 3; ++j) {
-				int v1 = faces_buffer[right_idx][j];
-				int v2 = faces_buffer[right_idx][(j + 1) % 3];
-				auto diff = V[v1] - V[v2];
-				max_len = std::max(max_len, diff.norm());
-			}
-			right_idx += 1;
-		}
-
-		SubdivideFaces(V, F, parent_faces, faces_buffer,
-			left_idx, right_idx, max_len, len_thres);
-		connected_component_segments.push_back(F.size());
-		left_idx = right_idx;
 	}
 
-	vertex_component.resize(V.size());
-	for (int i = 0; i < connected_component_segments.size() - 1; ++i) {
-		int start_idx = connected_component_segments[i];
-		int end_idx = connected_component_segments[i + 1];
-		for (int j = start_idx; j < end_idx; ++j) {
-			for (int k = 0; k < 3; ++k) {
-				vertex_component[F[j][k]] = i;
-			}
-		}
-	}	
-#endif
-	internal_vertices.resize(V.size(), 0);
+	internal_vertices_.resize(V.size(), 0);
 	for (int i = v_num; i < V.size(); ++i) {
 		if (!boundary_vertices.count(i))
-			internal_vertices[i] = 1;
+			internal_vertices_[i] = 1;
 	}
 }
 
@@ -309,6 +236,7 @@ void Subdivision::DelaunaySubdivision(
 }
 
 void Subdivision::ComputeGeometryNeighbors(double thres) {
+	auto& subdivide_mesh = subdivide_mesh_;
 	auto& vertices = subdivide_mesh.GetV();
 
 	double step = thres;
@@ -360,7 +288,7 @@ void Subdivision::ComputeGeometryNeighbors(double thres) {
 			if (v1 == v2)
 				continue;
 			count += 1;
-			geometry_neighbor_pairs.insert(std::make_pair(v1, v2));
+			geometry_neighbor_pairs_.insert(std::make_pair(v1, v2));
 			continue;
 		}
 		Eigen::MatrixXd gridV(l.size(), 3);
@@ -381,66 +309,14 @@ void Subdivision::ComputeGeometryNeighbors(double thres) {
 				std::swap(v1, v2);
 			if (v1 == v2)
 				continue;
-			geometry_neighbor_pairs.insert(std::make_pair(v1, v2));
+			geometry_neighbor_pairs_.insert(std::make_pair(v1, v2));
 		}
-	}
-}
-
-void Subdivision::SubdivideFaces(std::vector<Vector3>& V,
-	std::vector<Eigen::Vector3i>& F,
-	std::vector<int>& parent_faces,
-	std::vector<Eigen::Vector3i>& faces,
-	int left_idx, int right_idx, double max_len, double len_thres) {
-
-	int start_idx = F.size();
-	for (int i = left_idx; i < right_idx; ++i) {
-		F.push_back(faces[i]);
-		parent_faces.push_back(i);
-	}
-
-	int vsize = 0;
-	std::unordered_map<long long, int> edge_to_vid;
-	auto split_edge = [&](int v1, int v2) {
-		auto h = EdgeHash(v1, v2, vsize);
-		auto it = edge_to_vid.find(h);
-		if (it == edge_to_vid.end()) {
-			Vector3 mid_v = (V[v1] + V[v2]) * FT(0.5);
-			edge_to_vid[h] = V.size();
-			V.push_back(mid_v);
-			return (int)(V.size() - 1);
-		}
-		return it->second;
-	};
-
-	while (max_len > len_thres) {
-		edge_to_vid.clear();
-		int end_idx = F.size();
-		vsize = V.size();
-		for (int i = start_idx; i < end_idx; ++i) {
-			int v0 = F[i][0];
-			int v1 = F[i][1];
-			int v2 = F[i][2];
-
-			int nv0 = split_edge(v0, v1);
-			int nv1 = split_edge(v1, v2);
-			int nv2 = split_edge(v2, v0);
-
-			F[i] = Eigen::Vector3i(nv0, nv1, nv2);
-			F.push_back(Eigen::Vector3i(v0, nv0, nv2));
-			F.push_back(Eigen::Vector3i(nv0, v1, nv1));
-			F.push_back(Eigen::Vector3i(nv2, nv1, v2));
-
-			parent_faces.push_back(parent_faces[i]);
-			parent_faces.push_back(parent_faces[i]);
-			parent_faces.push_back(parent_faces[i]);
-		}
-		max_len *= 0.5;
 	}
 }
 
 long long Subdivision::EdgeHash(int v1, int v2, int vsize) {
 	if (vsize == -1)
-		vsize = subdivide_mesh.GetV().size();
+		vsize = subdivide_mesh_.GetV().size();
 	if (v1 < v2)
 		return (long long)v1 * (long long)vsize + v2;
 	else
@@ -449,6 +325,7 @@ long long Subdivision::EdgeHash(int v1, int v2, int vsize) {
 
 
 void Subdivision::SmoothInternal() {
+	auto& subdivide_mesh = subdivide_mesh_;
 	auto& V = subdivide_mesh.GetV();
 	auto& F = subdivide_mesh.GetF();
 	std::vector<std::unordered_set<int> > links(V.size());
@@ -463,7 +340,7 @@ void Subdivision::SmoothInternal() {
 	for (int iter = 0; iter < 3; ++iter) {
 		auto V_buf = V;
 		for (int i = 0; i < V.size(); ++i) {
-			if (!internal_vertices[i]) {
+			if (!internal_vertices_[i]) {
 				continue;
 			}
 			if (links[i].size() == 0)
@@ -476,4 +353,24 @@ void Subdivision::SmoothInternal() {
 			V[i] = v;
 		}
 	}
+}
+
+double Subdivision::calculateSignedArea2(double ax, double ay,
+	double bx, double by,
+	double cx, double cy) {
+	return ((cx - ax) * (by - ay) - (bx - ax) * (cy - ay));
+}
+
+void Subdivision::calculateBarycentricCoordinate(
+	double ax, double ay,
+	double bx, double by,
+	double cx, double cy,
+	double px, double py,
+	double& alpha, double& beta, double& gamma) {
+	double beta_tri = calculateSignedArea2(ax, ay, px, py, cx, cy);
+	double gamma_tri = calculateSignedArea2(ax, ay, bx, by, px, py);
+	double tri_inv = 1.0f / calculateSignedArea2(ax, ay, bx, by, cx, cy);
+	beta = beta_tri * tri_inv;
+	gamma = gamma_tri * tri_inv;
+	alpha = 1.0 - beta - gamma;
 }

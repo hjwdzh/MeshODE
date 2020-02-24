@@ -3,7 +3,6 @@
 
 #include "deformer.h"
 #include "mesh.h"
-#include "meshcover.h"
 #include "uniformgrid.h"
 
 // flags

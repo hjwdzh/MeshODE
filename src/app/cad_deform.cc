@@ -4,7 +4,6 @@
 #include "callback.h"
 #include "deformer.h"
 #include "mesh.h"
-#include "meshcover.h"
 #include "subdivision.h"
 #include "uniformgrid.h"
 
@@ -69,7 +68,8 @@ int main(int argc, char** argv) {
 
 	UniformGrid grid(GRID_RESOLUTION);
 	ref.Normalize();
-	sub.subdivide_mesh.ApplyTransform(ref);
+	auto& subdivide_mesh = sub.GetMesh();
+	subdivide_mesh.ApplyTransform(ref);
 	ref.ConstructDistanceField(grid);
 
 	int need_callback = 0;
@@ -85,15 +85,15 @@ int main(int argc, char** argv) {
 	} else {
 		Deformer deformer(lambda, callback);
 
-		vertex_pointer = &sub.subdivide_mesh.GetV();
+		vertex_pointer = &subdivide_mesh.GetV();
 		deformer.DeformSubdivision(grid, &sub);
 		flow.push_back(*vertex_pointer);
 
 		std::ofstream os(flow_file);
 		int top = 1;
 		
-		FT scale = sub.subdivide_mesh.GetScale();
-		Vector3 pos = sub.subdivide_mesh.GetTranslation();
+		FT scale = subdivide_mesh.GetScale();
+		Vector3 pos = subdivide_mesh.GetTranslation();
 
 		for (int i = 0; i < flow[0].size(); ++i) {
 			for (int j = 0; j < flow.size(); ++j) {
@@ -109,6 +109,6 @@ int main(int argc, char** argv) {
 	}
 	std::cout<<"Deformed"<<std::endl;
 
-	sub.subdivide_mesh.WriteOBJ(argv[3]);
+	subdivide_mesh.WriteOBJ(argv[3]);
 	return 0;
 }

@@ -176,7 +176,7 @@ void Deformer::DeformSubdivision(const UniformGrid& grid, Subdivision* psub) {
 	FT lambda = lambda_;
 	TerminateWhenSuccessCallback* callback =
 		callback_ == 0 ? 0 : &(*callback_);
-	auto& mesh = sub.subdivide_mesh;
+	auto& mesh = sub.GetMesh();
 	auto& V = mesh.GetV();
 	auto& F = mesh.GetF();
 	
@@ -196,8 +196,8 @@ void Deformer::DeformSubdivision(const UniformGrid& grid, Subdivision* psub) {
 	std::vector<ceres::ResidualBlockId> edge_block_ids;
 	edge_block_ids.reserve(3 * F.size());
 
-	edge_block_ids.reserve(sub.geometry_neighbor_pairs.size());
-	for (auto& p : sub.geometry_neighbor_pairs) {
+	edge_block_ids.reserve(sub.Neighbors().size());
+	for (auto& p : sub.Neighbors()) {
 		int v1 = p.first;
 		int v2 = p.second;
 		Vector3 v = (V[v1] - V[v2]);
@@ -274,7 +274,7 @@ void Deformer::ReverseDeform(const Mesh& tar, Mesh* psrc) {
 	auto& src_F = src.GetF();
 	auto& tar_V = tar.GetV();
 	auto& tar_F = tar.GetF();
-	
+
 	MatrixRowMajor V1(src_V.size(), 3), V2(tar_V.size(), 3);
 	Eigen::MatrixXi	F1(src_F.size(), 3), F2(tar_F.size(), 3);
 
