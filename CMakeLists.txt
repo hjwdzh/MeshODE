@@ -125,6 +125,7 @@ add_library(
 target_link_libraries(
     pyDeform
     deform_mesh
+    deform_optim
     pybind11::module
     torch
 )
