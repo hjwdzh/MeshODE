@@ -1,16 +1,17 @@
-#include <pybind11/pybind11.h>
+#include <ATen/ATen.h>
 
+#include <ceres/jet.h>
+
+#include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
 #include <torch/extension.h>
+
 #include <vector>
-#include <ATen/ATen.h>
 
 #include "mesh.h"
 #include "uniformgrid.h"
-
-#include <ceres/jet.h>
 
 namespace py = pybind11;
 
@@ -25,6 +26,8 @@ struct DeformParams
 
 	FT scale;
 	Vector3 trans;
+
+	std::vector<Eigen::Vector3f> edge_offset;
 };
 
 DeformParams params;
@@ -164,7 +167,33 @@ void DenormalizeByTemplate(
 	}
 }
 
-torch::Tensor RigidDeform_forward(
+void StoreRigidityInformation(
+	torch::Tensor tensorV,
+	torch::Tensor tensorF)
+{
+	const float* dataV = static_cast<const float*>(tensorV.storage().data());
+	auto dataF = static_cast<const int*>(tensorF.storage().data());
+
+	int f_size = tensorF.size(0);
+
+	params.edge_offset.resize(f_size * 3);
+	int offset = 0;
+	for (int i = 0; i < f_size; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int v0 = dataF[i * 3 + j];
+			int v1 = dataF[i * 3 + (j + 1) % 3];
+			const float* v0_data = dataV + v0 * 3;
+			const float* v1_data = dataV + v1 * 3;
+			params.edge_offset[offset] = Eigen::Vector3f(
+				v1_data[0] - v0_data[0],
+				v1_data[1] - v0_data[1],
+				v1_data[2] - v0_data[2]);
+			offset += 1;
+		}
+	}
+}
+
+torch::Tensor DistanceFieldLoss_forward(
 	torch::Tensor tensorV) {
 
 	int v_size = tensorV.size(0);
@@ -182,7 +211,7 @@ torch::Tensor RigidDeform_forward(
 	return loss;
 }
 
-torch::Tensor RigidDeform_backward(
+torch::Tensor DistanceFieldLoss_backward(
 	torch::Tensor tensorV) {
 
 	int v_size = tensorV.size(0);
@@ -217,7 +246,8 @@ PYBIND11_MODULE(pyDeform, m) {
 	m.def("InitializeDeformTemplate", &InitializeDeformTemplate);
 	m.def("NormalizeByTemplate", &NormalizeByTemplate);
 	m.def("DenormalizeByTemplate", &DenormalizeByTemplate);
-	m.def("RigidDeform_forward", &RigidDeform_forward);
-	m.def("RigidDeform_backward", &RigidDeform_backward);
+	m.def("DistanceFieldLoss_forward", &DistanceFieldLoss_forward);
+	m.def("DistanceFieldLoss_backward", &DistanceFieldLoss_backward);
+	m.def("StoreRigidityInformation", &StoreRigidityInformation);
 }
 
