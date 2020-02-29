@@ -1,9 +1,17 @@
-# ARAP
+# Deep Shape Deformation.
+Deform Shape A to fit shape B.
+
+![Plane Fitting Results](https://github.com/hjwdzh/ShapeDeform/raw/master/res/teaser.png)
+
+### Dependencies
+1. libIGL
+2. CGAL
+3. Ceres
 
 ### Build
 ```
 mkdir build
-cmake .. -DCMAKE_BUILD_TYPE=Release -Dceres_DIR=/orion/u/jingweih/3rd/ceres-solver/install/lib/cmake/Ceres
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j8
 ```
 
