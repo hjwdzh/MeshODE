@@ -18,10 +18,7 @@ find_package(CGAL)
 include(${CGAL_USE_FILE})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/lib)
 add_library(
-    deform SHARED
-    src/lib/callback.h
-    src/lib/deformer.cc
-    src/lib/deformer.h
+    deform_mesh
     src/lib/delaunay.cc
     src/lib/delaunay.h
     src/lib/mesh.cc
@@ -30,12 +27,24 @@ add_library(
     src/lib/subdivision.h
     src/lib/uniformgrid.cc
     src/lib/uniformgrid.h
-    src/lib/edgeloss.h
     src/lib/types.h
 )
 
 target_link_libraries(
-    deform
+    deform_mesh
+    ${CGAL_LIBRARIES}
+)
+
+add_library(
+    deform_optim
+    src/lib/callback.h
+    src/lib/deformer.cc
+    src/lib/deformer.h
+    src/lib/edgeloss.h
+)
+
+target_link_libraries(
+    deform_optim
     ${CERES_LIBRARIES}
 )
 
@@ -46,8 +55,8 @@ add_executable(
 
 target_link_libraries(
     rigid_deform
-    deform
-    ${CERES_LIBRARIES}
+    deform_mesh
+    deform_optim
 )
 
 add_executable(
@@ -57,8 +66,8 @@ add_executable(
 
 target_link_libraries(
     rigid_rot_deform
-    deform
-    ${CERES_LIBRARIES}
+    deform_mesh
+    deform_optim
 )
 
 add_executable(
@@ -68,9 +77,8 @@ add_executable(
 
 target_link_libraries(
     cad_deform
-    deform
-    ${CERES_LIBRARIES}
-    ${CGAL_LIBRARIES}
+    deform_mesh
+    deform_optim
 )
 
 add_executable(
@@ -80,7 +88,8 @@ add_executable(
 
 target_link_libraries(
     coverage_deform
-    deform
+    deform_mesh
+    deform_optim
 )
 
 add_executable(
@@ -90,5 +99,37 @@ add_executable(
 
 target_link_libraries(
     inverse_deform
-    deform
+    deform_mesh
+    deform_optim
 )
+
+
+if(NOT TORCH_PATH)
+    set(TORCH_PATH "/usr/local/lib/python3.7/site-packages/torch")
+endif()
+
+
+find_package(pybind11)
+IF (pybind11_FOUND)
+
+include_directories(${TORCH_PATH}/include)
+link_directories(${TORCH_PATH}/lib)
+include_directories(${TORCH_PATH}/include/torch/csrc/api/include)
+
+
+add_library(
+    pyDeform SHARED
+    src/pytorch/pydeform.cc
+)
+
+target_link_libraries(
+    pyDeform
+    deform_mesh
+    pybind11::module
+    torch
+)
+
+set_target_properties(pyDeform PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                         SUFFIX "${PYTHON_MODULE_EXTENSION}")
+
+ENDIF()
