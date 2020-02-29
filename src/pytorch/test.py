@@ -4,14 +4,21 @@ import torch
 import pyDeform
 import numpy as np
 
-print('step1')
 src_V, src_F = pyDeform.LoadMesh('../data/source.obj')
-print('step2')
 tar_V, tar_F = pyDeform.LoadMesh('../data/reference.obj')
-print('step3', src_V.shape, tar_V.shape)
 
 pyDeform.InitializeDeformTemplate(tar_V, tar_F, 1, 64, 1.0);
 
-print(src_V[0])
+src_V0 = src_V.clone()
+
 pyDeform.NormalizeByTemplate(src_V)
-print(src_V[0])
+
+
+for it in range(10000):
+	lossD = pyDeform.RigidDeform_forward(src_V)
+	lossD_gradient = pyDeform.RigidDeform_backward(src_V)
+	src_V -= lossD_gradient * float(1e-4)
+	print('loss = %.6f\n'%((lossD).mean().item()))
+
+pyDeform.DenormalizeByTemplate(src_V)
+

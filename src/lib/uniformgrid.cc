@@ -77,11 +77,14 @@ T UniformGrid::distance(const T* const p) const {
 
 	T res = w0 + w1 + w2 + w3 + w4 + w5 + w6 + w7;
 
-	if (res > 0.2)
+	if (res > (T)0.2)
 		return T(0);
 	return res;
 }
 
-template FT UniformGrid::distance<FT>(const FT* const) const;
+template double UniformGrid::distance<double>(const double* const) const;
+template float UniformGrid::distance<float>(const float* const) const;
 template ceres::Jet<double, 3> UniformGrid::distance<ceres::Jet<double, 3> >(
 	const ceres::Jet<double, 3>* const) const;
+template ceres::Jet<float, 3> UniformGrid::distance<ceres::Jet<float, 3> >(
+	const ceres::Jet<float, 3>* const) const;

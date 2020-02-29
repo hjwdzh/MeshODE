@@ -12,7 +12,8 @@ int MESH_RESOLUTION = 5000;
 int main(int argc, char** argv) {	
 	if (argc < 5) {
 		printf("./rigid_rot_deform source.obj reference.obj output.obj "
-			"[GRID_RESOLUTION=64] [MESH_RESOLUTION=5000]\n");
+			"[GRID_RESOLUTION=64] [MESH_RESOLUTION=5000]"
+			"[lambda=1] [symmetry=0]\n");
 		return 0;
 	}
 
@@ -30,6 +31,14 @@ int main(int argc, char** argv) {
 	FT lambda = 1;
 	if (argc > 6)
 		sscanf(argv[6], "%lf", &lambda);
+
+	int symmetry = 0;
+	if (argc > 7) {
+		sscanf(argv[7], "%d", &symmetry);
+	}
+
+	if (symmetry)
+		ref.ReflectionSymmetrize();
 
 	//Get number of vertices and faces
 	std::cout << "Source:\t\t" << "Num vertices: " << src.GetV().size()

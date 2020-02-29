@@ -10,6 +10,8 @@
 #include "mesh.h"
 #include "uniformgrid.h"
 
+#include <ceres/jet.h>
+
 namespace py = pybind11;
 
 struct DeformParams
@@ -81,7 +83,6 @@ void CopyTensorToMesh(const torch::Tensor& tensorV,
 	V.resize(v_size);
 	F.resize(f_size);
 
-	printf("%d %d\n", v_size, f_size);
 	for (int i = 0; i < V.size(); ++i) {
 		for (int j = 0; j < 3; ++j) {
 			V[i][j] = dataV[i * 3 + j];
@@ -149,9 +150,74 @@ void NormalizeByTemplate(
 	}
 }
 
+void DenormalizeByTemplate(
+	torch::Tensor tensorV)
+{
+	int v_size = tensorV.size(0);
+	auto dataV = static_cast<float*>(tensorV.storage().data());
+	auto& trans = params.trans;
+	auto& scale = params.scale;
+	for (int i = 0; i < v_size; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			dataV[i * 3 + j] = dataV[i * 3 + j] * scale + trans[j];
+		}
+	}
+}
+
+torch::Tensor RigidDeform_forward(
+	torch::Tensor tensorV) {
+
+	int v_size = tensorV.size(0);
+	auto dataV = static_cast<const float*>(tensorV.storage().data());
+
+	auto float_options = torch::TensorOptions().dtype(torch::kFloat32);
+	torch::Tensor loss = torch::full({v_size}, /*value=*/0, float_options);
+
+	auto dataL = static_cast<float*>(loss.storage().data());
+	for (int i = 0; i < v_size; ++i) {
+		dataL[i] = params.grid.distance(dataV + i * 3);
+		dataL[i] *= dataL[i];
+	}
+
+	return loss;
+}
+
+torch::Tensor RigidDeform_backward(
+	torch::Tensor tensorV) {
+
+	int v_size = tensorV.size(0);
+	const float* dataV = static_cast<const float*>(tensorV.storage().data());
+
+	auto float_options = torch::TensorOptions().dtype(torch::kFloat32);
+	torch::Tensor loss = torch::full({v_size, 3}, /*value=*/0, float_options);
+
+	float* dataL = static_cast<float*>(loss.storage().data());
+	for (int i = 0; i < v_size; ++i) {
+		const float* v = dataV + i * 3;
+		float* l = dataL + i * 3;
+
+		ceres::Jet<float, 3> p[3] = {
+			ceres::Jet<float, 3>(v[0], Eigen::Vector3f(1,0,0)),
+			ceres::Jet<float, 3>(v[1], Eigen::Vector3f(0,1,0)),
+			ceres::Jet<float, 3>(v[2], Eigen::Vector3f(0,0,1))
+		};
+
+		auto vd = params.grid.distance(p);
+		vd *= vd;
+		l[0] = vd.v[0];
+		l[1] = vd.v[1];
+		l[2] = vd.v[2];
+	}
+
+	return loss;
+}
+
 PYBIND11_MODULE(pyDeform, m) {
 	m.def("LoadMesh", &LoadMesh);
 	m.def("InitializeDeformTemplate", &InitializeDeformTemplate);
 	m.def("NormalizeByTemplate", &NormalizeByTemplate);
+	m.def("DenormalizeByTemplate", &DenormalizeByTemplate);
+	m.def("RigidDeform_forward", &RigidDeform_forward);
+	m.def("RigidDeform_backward", &RigidDeform_backward);
 }
 

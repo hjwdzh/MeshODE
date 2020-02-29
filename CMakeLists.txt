@@ -105,6 +105,8 @@ target_link_libraries(
 
 
 if(NOT TORCH_PATH)
+    message('TORCH_PATH is set default as /usr/local/lib/python3.7/site-packages/torch.')
+    message('Consider to use -DTORCH_PATH your_path to specialize your path instead.')
     set(TORCH_PATH "/usr/local/lib/python3.7/site-packages/torch")
 endif()
 

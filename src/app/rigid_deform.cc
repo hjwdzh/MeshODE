@@ -48,10 +48,10 @@ int main(int argc, char** argv) {
 
 	UniformGrid grid(GRID_RESOLUTION);
 	ref.Normalize();
-	src.ApplyTransform(ref);
 
 	ref.ConstructDistanceField(grid);
 	
+	src.ApplyTransform(ref);
 	Deformer deformer(lambda);
 
 	deformer.Deform(grid, &src);
