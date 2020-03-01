@@ -14,6 +14,9 @@ public:
 	template <class T>
 	T distance(const T* const p) const;
 
+	template <class T>
+	T DistanceFloat(const T* const p) const;
+
 	int Dimension() const {
 		return grid_dimension_;
 	}
