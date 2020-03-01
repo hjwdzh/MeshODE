@@ -9,13 +9,16 @@ from torch.autograd import Function
 from rigid_deform_layer import RigidDeformLayer
 import pyDeform
 
-tar_V, tar_F = pyDeform.LoadMesh('../data/reference.obj')
-src_V, src_F = pyDeform.LoadMesh('../data/source.obj')
+source_path = sys.argv[1]
+reference_path = sys.argv[2]
+output_path = sys.argv[3]
+src_V, src_F = pyDeform.LoadMesh(source_path)
+tar_V, tar_F = pyDeform.LoadMesh(reference_path)
 
 rigid_deform = RigidDeformLayer(src_V, src_F, tar_V, tar_F)
 src_V = nn.Parameter(src_V)
 
-optimizer = optim.SGD([src_V], lr=1e-3)
+optimizer = optim.Adam([src_V], lr=1e-3)
 
 niter = 10000
 for _ in range(0, niter):
@@ -24,4 +27,7 @@ for _ in range(0, niter):
 	loss.backward()
 	optimizer.step()
 	print('loss=%.6f'%(loss.item()))
+	if loss.item() < 0.6:
+		break
 
+pyDeform.SaveMesh(output_path, src_V, src_F)

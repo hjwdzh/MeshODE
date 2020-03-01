@@ -7,12 +7,19 @@ Deform Shape A to fit shape B.
 1. libIGL
 2. CGAL
 3. Ceres
+4. pybind11
 
 ### Build
 ```
 mkdir build
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_BUILD_TYPE=Release -DIGL_INCLUDE_PATH= -DTORCH_PATH=XXX
 make -j8
+```
+
+### Download test data
+```
+cd data
+sh download.sh
 ```
 
 ### Run
@@ -30,7 +37,13 @@ We provide different binaries for shape deformation with different assumptions.
 
 The way to run them is by
 ```
-${binary} source.obj reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0].
+./rigid_deform source.obj reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0].
 ```
 
+### Run Pytorch optimizer
+```
+cd build
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+python ../src/pytorch/optimize_rigid_deform.py ../data/source.obj ../data/reference.obj ./output.obj
+```
 

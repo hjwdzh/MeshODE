@@ -28,6 +28,8 @@ for it in range(10000):
 	lossR_gradient = pyDeform.EdgeLoss_backward(src_V, src_F)
 
 	loss = lossD.sum() + lossR.sum()
+	print('loss = %.6f\n'%((loss).sum().item()))
+	exit(0)
 	loss_gradient = lossD_gradient + lossR_gradient
 
 	src_V -= loss_gradient * float(1e-3)

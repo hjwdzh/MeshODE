@@ -14,7 +14,6 @@
 #include "uniformgrid.h"
 
 namespace py = pybind11;
-
 //#define USE_DOUBLE
 
 struct DeformParams
