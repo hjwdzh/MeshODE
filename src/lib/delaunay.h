@@ -1,5 +1,5 @@
-#ifndef ARAP_DELAUNAY_H_
-#define ARAP_DELAUNAY_H_
+#ifndef SHAPEDEFORM_DELAUNAY_H_
+#define SHAPEDEFORM_DELAUNAY_H_
 
 #include <Eigen/Core>
 

@@ -1,5 +1,5 @@
-#ifndef ARAP_CALLBACK_H_
-#define ARAP_CALLBACK_H_
+#ifndef SHAPEDEFORM_CALLBACK_H_
+#define SHAPEDEFORM_CALLBACK_H_
 
 #include <ceres/ceres.h>
 

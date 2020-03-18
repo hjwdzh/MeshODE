@@ -1,5 +1,5 @@
-#ifndef MESH_TENSOR_H_
-#define MESH_TENSOR_H_
+#ifndef SHAPEDEFORM_INTERFACE_MESH_TENSOR_H_
+#define SHAPEDEFORM_INTERFACE_MESH_TENSOR_H_
 
 #include <torch/extension.h>
 

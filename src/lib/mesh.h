@@ -1,5 +1,5 @@
-#ifndef ARAP_MESH_H_
-#define ARAP_MESH_H_
+#ifndef SHAPEDEFORM_MESH_H_
+#define SHAPEDEFORM_MESH_H_
 
 #include "types.h"
 

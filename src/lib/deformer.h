@@ -1,5 +1,5 @@
-#ifndef ARAP_DEFORMER_H_
-#define ARAP_DEFORMER_H_
+#ifndef SHAPEDEFORM_DEFORMER_H_
+#define SHAPEDEFORM_DEFORMER_H_
 
 #include <memory>
 

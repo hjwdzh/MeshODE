@@ -1,5 +1,5 @@
-#ifndef ARAP_UNIFORM_GRID_H_
-#define ARAP_UNIFORM_GRID_H_
+#ifndef SHAPEDEFORM_UNIFORM_GRID_H_
+#define SHAPEDEFORM_UNIFORM_GRID_H_
 
 #include <vector>
 

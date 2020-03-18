@@ -1,7 +1,8 @@
-#ifndef DEFORM_PARAMS_H_
-#define DEFORM_PARAMS_H_
+#ifndef SHAPEDEFORM_INTERFACE_DEFORM_PARAMS_H_
+#define SHAPEDEFORM_INTERFACE_DEFORM_PARAMS_H_
 
 #include <mesh.h>
+#include <torch/extension.h>
 
 struct DeformParams
 {
@@ -20,5 +21,12 @@ struct DeformParams
 	std::vector<Eigen::Vector3d> edge_offset;
 #endif
 };
+
+extern DeformParams params;
+void InitializeDeformTemplate(
+	torch::Tensor tensorV,
+	torch::Tensor tensorF,
+	int symmetry,
+	int grid_resolution);
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef ARAP_SUBDIVISION_H_
-#define ARAP_SUBDIVISION_H_
+#ifndef SHAPEDEFORM_SUBDIVISION_H_
+#define SHAPEDEFORM_SUBDIVISION_H_
 
 #include "mesh.h"
 

@@ -1,5 +1,5 @@
-#ifndef ARAP_DISTANCELOSS_H_
-#define ARAP_DISTANCELOSS_H_
+#ifndef SHAPEDEFORM_DISTANCELOSS_H_
+#define SHAPEDEFORM_DISTANCELOSS_H_
 
 #include "uniformgrid.h"
 

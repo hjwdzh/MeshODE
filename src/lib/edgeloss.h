@@ -1,5 +1,5 @@
-#ifndef ARAP_EDGELOSS_H_
-#define ARAP_EDGELOSS_H_
+#ifndef SHAPEDEFORM_EDGELOSS_H_
+#define SHAPEDEFORM_EDGELOSS_H_
 
 #include "types.h"
 

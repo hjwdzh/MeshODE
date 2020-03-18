@@ -1,5 +1,5 @@
-#ifndef ARAP_TYPES_H_
-#define ARAP_TYPES_H_
+#ifndef SHAPEDEFORM_TYPES_H_
+#define SHAPEDEFORM_TYPES_H_
 
 #include <Eigen/Core>
 #include <Eigen/Sparse>
