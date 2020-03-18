@@ -17,6 +17,14 @@ find_package(CGAL)
 
 include(${CGAL_USE_FILE})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/lib)
+
+if(NOT IGL_INCLUDE_PATH)
+    message('IGL_INCLUDE_PATH is set default as /usr/include/igl')
+    message('Consider to use -DIGL_INCLUDE_PATH your_path to specialize your path instead.')
+    set(IGL_INCLUDE_PATH "/usr/include/igl")
+endif()
+
+include_directories(IGL_INCLUDE_PATH)
 add_library(
     deform_mesh
     src/lib/delaunay.cc
