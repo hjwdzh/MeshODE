@@ -8,7 +8,7 @@ class RigidDeformFunction(Function):
 	@staticmethod
 	def forward(ctx, src_V, src_F):
 		lossD = pyDeform.DistanceFieldLoss_forward(src_V) * 0.5
-		lossR = pyDeform.EdgeLoss_forward(src_V, src_F) * 0.5
+		lossR = pyDeform.RigidEdgeLoss_forward(src_V, src_F) * 0.5
 
 		variables = [src_V, src_F]
 		ctx.save_for_backward(*variables)
@@ -20,7 +20,7 @@ class RigidDeformFunction(Function):
 		src_V = ctx.saved_variables[0]
 		src_F = ctx.saved_variables[1]
 		lossD_gradient = pyDeform.DistanceFieldLoss_backward(src_V)
-		lossR_gradient = pyDeform.EdgeLoss_backward(src_V, src_F)
+		lossR_gradient = pyDeform.RigidEdgeLoss_backward(src_V, src_F)
 
 		return grad_h*(lossD_gradient + lossR_gradient), None
 

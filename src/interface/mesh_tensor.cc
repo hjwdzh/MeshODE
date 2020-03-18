@@ -1,5 +1,7 @@
 #include "mesh_tensor.h"
 
+#include <subdivision.h>
+
 void CopyMeshToTensor(const Mesh& m,
 	torch::Tensor* ptensorV,
 	torch::Tensor* ptensorF,
@@ -95,6 +97,40 @@ std::vector<torch::Tensor> LoadMesh(
 	src.Normalize();
 	
 	return {tensorV, tensorF};
+}
+
+std::vector<torch::Tensor> LoadCadMesh(
+	const char* filename) {
+
+	Mesh cad;
+	cad.ReadOBJ(filename);
+	cad.RemoveDegenerated();
+	cad.MergeDuplex();
+
+	Subdivision sub;
+	sub.Subdivide(cad, 2e-2);
+
+	sub.ComputeGeometryNeighbors(3e-2);	
+	auto& subdivide_mesh = sub.GetMesh();
+	auto& neighbors = sub.Neighbors();
+
+	torch::Tensor tensorV;
+	torch::Tensor tensorF;
+	torch::Tensor tensorE;
+
+	CopyMeshToTensor(subdivide_mesh, &tensorV, &tensorF, 0);	
+	auto int_options = torch::TensorOptions().dtype(torch::kInt32);
+	tensorE = torch::full({(long long)neighbors.size(), 2}, /*value=*/0, int_options);
+
+	auto dataE = static_cast<int*>(tensorE.storage().data());
+	int top = 0;
+	for (auto& n : neighbors) {
+		dataE[top] = n.first;
+		dataE[top + 1] = n.second;
+		top += 2;
+	}
+
+	return {tensorV, tensorF, tensorE};
 }
 
 void SaveMesh(const char* filename,

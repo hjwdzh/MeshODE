@@ -194,9 +194,8 @@ void Deformer::DeformSubdivision(const UniformGrid& grid, Subdivision* psub) {
 
 	//Enforce rigidity
 	std::vector<ceres::ResidualBlockId> edge_block_ids;
-	edge_block_ids.reserve(3 * F.size());
+	edge_block_ids.reserve(3 * F.size() + sub.Neighbors().size());
 
-	edge_block_ids.reserve(sub.Neighbors().size());
 	for (auto& p : sub.Neighbors()) {
 		int v1 = p.first;
 		int v2 = p.second;

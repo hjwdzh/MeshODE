@@ -18,6 +18,9 @@ void CopyTensorToMesh(const torch::Tensor& tensorV,
 std::vector<torch::Tensor> LoadMesh(
 	const char* filename);
 
+std::vector<torch::Tensor> LoadCadMesh(
+	const char* filename);
+
 void SaveMesh(const char* filename,
 	const torch::Tensor& tensorV,
 	const torch::Tensor& tensorF);

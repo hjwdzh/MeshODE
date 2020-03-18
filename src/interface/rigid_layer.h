@@ -5,22 +5,17 @@
 #include "mesh_tensor.h"
 #include "normalize.h"
 
+
 void StoreRigidityInformation(
 	torch::Tensor tensorV,
 	torch::Tensor tensorF);
 
-torch::Tensor EdgeLoss_forward(
+torch::Tensor RigidEdgeLoss_forward(
 	torch::Tensor tensorV,
 	torch::Tensor tensorF);
 
-torch::Tensor EdgeLoss_backward(
+torch::Tensor RigidEdgeLoss_backward(
 	torch::Tensor tensorV,
 	torch::Tensor tensorF);
-
-torch::Tensor DistanceFieldLoss_forward(
-	torch::Tensor tensorV);
-
-torch::Tensor DistanceFieldLoss_backward(
-	torch::Tensor tensorV);
 
 #endif

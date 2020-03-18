@@ -17,8 +17,10 @@ struct DeformParams
 
 #ifndef USE_DOUBLE
 	std::vector<Eigen::Vector3f> edge_offset;
+	std::vector<float> edge_lambda;
 #else
 	std::vector<Eigen::Vector3d> edge_offset;
+	std::vector<double> edge_lambda;
 #endif
 };
 
