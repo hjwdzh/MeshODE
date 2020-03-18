@@ -71,7 +71,9 @@ void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
 	std::sort(colors.begin(), colors.end());
 
 	std::vector<Eigen::Vector3i> faces_buffer(F.size());
-
+	for (int i = 0; i < colors.size(); ++i) {
+		faces_buffer[i] = F[colors[i].second];
+	}
 	F.clear();
 
 	int v_num = V.size();
