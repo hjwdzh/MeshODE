@@ -129,7 +129,10 @@ include_directories(${TORCH_PATH}/include/torch/csrc/api/include)
 
 add_library(
     pyDeform SHARED
-    src/pytorch/pydeform.cc
+    src/interface/deform_params.h
+    src/interface/mesh_tensor.h
+    src/interface/mesh_tensor.cc
+    src/interface/pydeform.cc
 )
 
 target_link_libraries(

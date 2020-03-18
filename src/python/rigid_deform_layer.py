@@ -37,3 +37,5 @@ class RigidDeformLayer(nn.Module):
 	def forward(self, src_V, src_F):
 		return RigidDeformFunction.apply(src_V, src_F)
 
+def Finalize(src_V):
+	pyDeform.DenormalizeByTemplate(src_V)

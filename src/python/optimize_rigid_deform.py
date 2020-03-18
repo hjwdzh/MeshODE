@@ -6,7 +6,7 @@ from torch import nn
 import torch.optim as optim
 from torch.autograd import Function
 
-from rigid_deform_layer import RigidDeformLayer
+from rigid_deform_layer import RigidDeformLayer, Finalize
 import pyDeform
 
 source_path = sys.argv[1]
@@ -30,4 +30,5 @@ for _ in range(0, niter):
 	if loss.item() < 0.6:
 		break
 
+Finalize(src_V)
 pyDeform.SaveMesh(output_path, src_V, src_F)
