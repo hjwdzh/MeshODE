@@ -44,6 +44,7 @@ The way to run them is by
 ```
 cd build
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-python ../src/pytorch/optimize_rigid_deform.py ../data/source.obj ../data/reference.obj ./output.obj
+python ../src/pytorch/optimize_rigid_deform.py ../data/source.obj ../data/reference.obj ./rigid_output.obj
+python ../src/pytorch/optimize_rigid_deform.py ../data/cad.obj ../data/reference.obj ./cad_output.obj
 ```
 
