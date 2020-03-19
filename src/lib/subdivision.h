@@ -21,6 +21,9 @@ public:
 	const std::set<std::pair<int, int> >& Neighbors() const {
 		return geometry_neighbor_pairs_;
 	}
+	std::vector<int>& Vertex2Graph() {
+		return representative_reference_;
+	}
 	std::vector<Vector3>& GraphV() {
 		return representative_vertices_;
 	}
@@ -56,7 +59,6 @@ private:
 	std::vector<int> internal_vertices_;
 
 	std::vector<int> representative_reference_;
-	std::vector<Vector3> representative_diffs_;
 	std::vector<Vector3> representative_vertices_;
 	std::set<std::pair<int, int> > representative_edges_;
 

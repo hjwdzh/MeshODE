@@ -381,10 +381,6 @@ void Subdivision::ComputeRepresentativeGraph(double thres) {
 		}
 	}
 
-	representative_diffs_.resize(V.size());
-	for (int i = 0; i < representative_diffs_.size(); ++i)
-		representative_diffs_[i] = V[i] - representative_vertices_[
-			representative_reference_[i]];
 }
 
 long long Subdivision::EdgeHash(int v1, int v2, int vsize) {
@@ -488,8 +484,8 @@ void Subdivision::LinearSolve() {
 
 	for (int i = 0; i < V.size(); ++i) {
 		double weight = 1e-6;
-		add_entry_A(i, i, 1e-6);
-		add_entry_B(i, 1e-6 *
+		add_entry_A(i, i, weight);
+		add_entry_B(i, weight *
 			representative_vertices_[representative_reference_[i]]);
 	}
 

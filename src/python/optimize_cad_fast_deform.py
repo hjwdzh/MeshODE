@@ -6,28 +6,31 @@ from torch import nn
 import torch.optim as optim
 from torch.autograd import Function
 
-from rigid_deform_layer import RigidDeformLayer, Finalize
+from graph_deform_layer import GraphDeformLayer, Finalize
 import pyDeform
 
 source_path = sys.argv[1]
 reference_path = sys.argv[2]
 output_path = sys.argv[3]
-src_V, src_F = pyDeform.LoadMesh(source_path)
+src_V, src_F, src_E, src_to_graph, graph_V, graph_E\
+	= pyDeform.LoadCadMesh(source_path)
+
 tar_V, tar_F = pyDeform.LoadMesh(reference_path)
 
-rigid_deform = RigidDeformLayer(src_V, src_F, tar_V, tar_F)
-src_V = nn.Parameter(src_V)
 
-optimizer = optim.Adam([src_V], lr=1e-3)
+graph_deform = GraphDeformLayer(graph_V, graph_E, tar_V, tar_F)
+graph_V = nn.Parameter(graph_V)
+
+optimizer = optim.Adam([graph_V], lr=1e-3)
 
 niter = 10000
 for it in range(0, niter):
 	optimizer.zero_grad()	
-	loss = rigid_deform(src_V, src_F)
+	loss = graph_deform(graph_V, graph_E)
 	loss.backward()
 	optimizer.step()
 	if it % 100 == 0:
-		print('iter=%d loss=%.6f'%(it, loss.item()))
+		print('iter=%d, loss=%.6f'%(it, loss.item()))
 
-Finalize(src_V)
+Finalize(src_V, src_F, src_E, src_to_graph, graph_V)
 pyDeform.SaveMesh(output_path, src_V, src_F)

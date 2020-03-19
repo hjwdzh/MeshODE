@@ -2,9 +2,10 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
-#include "distance_layer.h"
-#include "rigid_layer.h"
 #include "cad_layer.h"
+#include "distance_layer.h"
+#include "graph_layer.h"
+#include "rigid_layer.h"
 
 namespace py = pybind11;
 //#define USE_DOUBLE
@@ -28,5 +29,10 @@ PYBIND11_MODULE(pyDeform, m) {
 	m.def("CadEdgeLoss_forward", &CadEdgeLoss_forward);
 	m.def("CadEdgeLoss_backward", &CadEdgeLoss_backward);
 	m.def("StoreCadInformation", &StoreCadInformation);
+
+	m.def("GraphEdgeLoss_forward", &GraphEdgeLoss_forward);
+	m.def("GraphEdgeLoss_backward", &GraphEdgeLoss_backward);
+	m.def("StoreGraphInformation", &StoreGraphInformation);
+
 }
 

@@ -129,12 +129,14 @@ include_directories(${TORCH_PATH}/include/torch/csrc/api/include)
 
 add_library(
     pyDeform SHARED
-    src/interface/deform_params.cc
     src/interface/deform_params.h
-    src/interface/cad_layer.cc
+    src/interface/deform_params.cc
     src/interface/cad_layer.h
-    src/interface/distance_layer.cc
+    src/interface/cad_layer.cc
     src/interface/distance_layer.h
+    src/interface/distance_layer.cc
+    src/interface/graph_layer.h
+    src/interface/graph_layer.cc
     src/interface/mesh_tensor.h
     src/interface/mesh_tensor.cc
     src/interface/normalize.h

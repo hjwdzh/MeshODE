@@ -110,19 +110,45 @@ std::vector<torch::Tensor> LoadCadMesh(
 	Subdivision sub;
 	sub.Subdivide(cad, 2e-2);
 
-	sub.ComputeGeometryNeighbors(3e-2);	
+	sub.ComputeGeometryNeighbors(1.5e-2);
+	sub.ComputeRepresentativeGraph(1e-2);
+
 	auto& subdivide_mesh = sub.GetMesh();
 	auto& neighbors = sub.Neighbors();
+	auto& references = sub.Vertex2Graph();
+	auto& graph_vertices = sub.GraphV();
+	auto& graph_edges = sub.GraphE();
 
 	torch::Tensor tensorV;
 	torch::Tensor tensorF;
 	torch::Tensor tensorE;
+	torch::Tensor tensorSrc2Graph;
+	torch::Tensor tensorGraphV;
+	torch::Tensor tensorGraphE;
 
 	CopyMeshToTensor(subdivide_mesh, &tensorV, &tensorF, 0);	
 	auto int_options = torch::TensorOptions().dtype(torch::kInt32);
-	tensorE = torch::full({(long long)neighbors.size(), 2}, /*value=*/0, int_options);
+#ifndef USE_DOUBLE
+	typedef float T;
+	auto float_options = torch::TensorOptions().dtype(torch::kFloat32);
+#else
+	typedef double T;
+	auto float_options = torch::TensorOptions().dtype(torch::kFloat64);
+#endif
+
+	tensorE = torch::full({(long long)neighbors.size(), 2}, 0, int_options);
+	tensorSrc2Graph = torch::full({(long long)references.size(), 2},
+		0, int_options);
+	tensorGraphV = torch::full({(long long)graph_vertices.size(), 3},
+		0, float_options);
+	tensorGraphE = torch::full({(long long)graph_edges.size(), 2},
+		0, int_options);
 
 	auto dataE = static_cast<int*>(tensorE.storage().data());
+	auto dataSrc2Graph = static_cast<int*>(tensorSrc2Graph.storage().data());
+	auto dataGraphV = static_cast<T*>(tensorGraphV.storage().data());
+	auto dataGraphE = static_cast<int*>(tensorGraphE.storage().data());
+
 	int top = 0;
 	for (auto& n : neighbors) {
 		dataE[top] = n.first;
@@ -130,7 +156,25 @@ std::vector<torch::Tensor> LoadCadMesh(
 		top += 2;
 	}
 
-	return {tensorV, tensorF, tensorE};
+	for (int i = 0; i < references.size(); ++i) {
+		dataSrc2Graph[i] = references[i];
+	}
+
+	for (int i = 0; i < graph_vertices.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			dataGraphV[i * 3 + j] = graph_vertices[i][j];
+		}
+	}
+
+	top = 0;
+	for (auto& n : graph_edges) {
+		dataGraphE[top] = n.first;
+		dataGraphE[top + 1] = n.second;
+		top += 2;
+	}
+
+	return {tensorV, tensorF, tensorE, tensorSrc2Graph,
+		tensorGraphV, tensorGraphE};
 }
 
 void SaveMesh(const char* filename,
