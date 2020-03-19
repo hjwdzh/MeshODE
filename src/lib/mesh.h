@@ -17,7 +17,7 @@ public:
 	void ReflectionSymmetrize();
 	// Normalize and Denormalize
 	void Normalize();
-	void ApplyTransform(Mesh& m);
+	void ApplyTransform(const Mesh& m);
 
 	// Conversion between Distance Field
 	void ConstructDistanceField(UniformGrid& grid);

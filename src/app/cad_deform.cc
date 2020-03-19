@@ -47,7 +47,8 @@ int main(int argc, char** argv) {
 	Subdivision sub;
 	sub.Subdivide(cad, 2e-2);
 
-	sub.ComputeGeometryNeighbors(3e-2);
+	sub.ComputeGeometryNeighbors(1.5e-2);
+	sub.ComputeRepresentativeGraph(1e-2);
 
 	//sub.ComputeGeometryNeighbors(1e-2);
 	if (argc > 4)
@@ -68,8 +69,9 @@ int main(int argc, char** argv) {
 
 	UniformGrid grid(GRID_RESOLUTION);
 	ref.Normalize();
+	sub.ApplyTransform(ref);
 	auto& subdivide_mesh = sub.GetMesh();
-	subdivide_mesh.ApplyTransform(ref);
+	//subdivide_mesh.ApplyTransform(ref);
 	ref.ConstructDistanceField(grid);
 
 	int need_callback = 0;
@@ -81,7 +83,9 @@ int main(int argc, char** argv) {
 
 	if (!need_callback) {
 		Deformer deformer(lambda);
-		deformer.DeformSubdivision(grid, &sub);
+		//deformer.DeformSubdivision(grid, &sub);
+		deformer.DeformGraph(grid, &sub);
+		sub.LinearSolve();
 	} else {
 		Deformer deformer(lambda, callback);
 

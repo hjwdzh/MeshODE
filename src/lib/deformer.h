@@ -22,6 +22,8 @@ public:
 
 	void ReverseDeform(const Mesh& tar, Mesh* src);
 
+	void DeformGraph(const UniformGrid& grid, Subdivision* sub);
+
 private:
 	FT lambda_;
 	std::shared_ptr<TerminateWhenSuccessCallback> callback_;

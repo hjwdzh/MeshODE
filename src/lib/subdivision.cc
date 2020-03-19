@@ -6,11 +6,21 @@
 #include <unordered_map>
 
 #include <Eigen/Dense>
+#include <Eigen/SparseCholesky>
 
 #include "delaunay.h"
 
 Subdivision::Subdivision()
 {
+}
+
+void Subdivision::ApplyTransform(const Mesh& mesh) {
+	subdivide_mesh_.ApplyTransform(mesh);
+	auto pos = mesh.GetTranslation();
+	auto scale = mesh.GetScale();
+	for (auto& v : representative_vertices_) {
+		v = (v - pos) / scale;
+	}
 }
 
 void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
@@ -316,6 +326,68 @@ void Subdivision::ComputeGeometryNeighbors(double thres) {
 	}
 }
 
+void Subdivision::ComputeRepresentativeGraph(double thres) {
+	double step = thres;
+
+	auto make_key = [&](const Vector3& v) {
+		return std::make_pair(int(v[0]/step),
+			std::make_pair(int(v[1]/step), int(v[2]/step)));
+	};
+	std::map<std::pair<int, std::pair<int, int> >,
+		std::unordered_set<int> > grids;
+
+	auto& V = subdivide_mesh_.GetV();
+	auto& F = subdivide_mesh_.GetF();
+	for (int i = 0; i < V.size(); ++i) {
+		auto k = make_key(V[i]);
+		auto it = grids.find(k);
+		if (it != grids.end()) {
+			it->second.insert(i);
+		} else {
+			std::unordered_set<int> u;
+			u.insert(i);
+			grids[k] = u;
+		}
+	}
+
+	representative_vertices_.reserve(grids.size());
+	representative_reference_.resize(V.size());
+	for (auto& info : grids) {
+		Vector3 p(0, 0, 0);
+		for (auto& id : info.second) {
+			p += V[id];
+			representative_reference_[id] = representative_vertices_.size();
+		}
+		p /= (double)info.second.size();
+		representative_vertices_.push_back(p);
+	}
+	for (auto& info : geometry_neighbor_pairs_) {
+		int v0 = representative_reference_[info.first];
+		int v1 = representative_reference_[info.second];
+		if (v0 == v1)
+			continue;
+		if (v0 > v1)
+			std::swap(v0, v1);
+		representative_edges_.insert(std::make_pair(v0, v1));
+	}
+	for (int i = 0; i < F.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int v0 = representative_reference_[F[i][j]];
+			int v1 = representative_reference_[F[i][(j + 1) % 3]];
+			if (v0 == v1)
+				continue;
+			if (v0 > v1)
+				std::swap(v0, v1);
+			representative_edges_.insert(std::make_pair(v0, v1));
+		}
+	}
+
+	representative_diffs_.resize(V.size());
+	for (int i = 0; i < representative_diffs_.size(); ++i)
+		representative_diffs_[i] = V[i] - representative_vertices_[
+			representative_reference_[i]];
+}
+
 long long Subdivision::EdgeHash(int v1, int v2, int vsize) {
 	if (vsize == -1)
 		vsize = subdivide_mesh_.GetV().size();
@@ -375,4 +447,105 @@ void Subdivision::calculateBarycentricCoordinate(
 	beta = beta_tri * tri_inv;
 	gamma = gamma_tri * tri_inv;
 	alpha = 1.0 - beta - gamma;
+}
+
+void Subdivision::LinearSolve() {
+	std::unordered_map<long long, FT> trips;
+	
+	auto& V = subdivide_mesh_.GetV();
+	auto& F = subdivide_mesh_.GetF();
+
+	int num_entries = V.size();
+	MatrixX B = MatrixX::Zero(num_entries, 3);
+	auto add_entry_A = [&](int x, int y, FT w) {
+		long long key = (long long)x * (long long)num_entries + (long long)y;
+		auto it = trips.find(key);
+		if (it == trips.end())
+			trips[key] = w;
+		else
+			it->second += w;
+	};
+	auto add_entry_B = [&](int m, const Vector3& v) {
+		B.row(m) += v;
+	};
+
+	std::vector<std::vector<int> > grid_cell(representative_vertices_.size());
+	for (int i = 0; i < representative_reference_.size(); ++i)
+		grid_cell[representative_reference_[i]].push_back(i);
+
+
+	for (int i = 0; i < grid_cell.size(); ++i) {
+		double weight = 1.0 / grid_cell[i].size();
+		double weight2 = weight * weight;
+		for (int j = 0; j < grid_cell[i].size(); ++j) {
+			for (int k = 0; k < grid_cell[i].size(); ++k) {
+				add_entry_A(grid_cell[i][j], grid_cell[i][k], weight2);
+			}
+		}
+		for (int j = 0; j < grid_cell[i].size(); ++j) {
+			add_entry_B(grid_cell[i][j], weight * representative_vertices_[i]);
+		}
+	}
+
+	for (int i = 0; i < V.size(); ++i) {
+		double weight = 1e-6;
+		add_entry_A(i, i, 1e-6);
+		add_entry_B(i, 1e-6 *
+			representative_vertices_[representative_reference_[i]]);
+	}
+
+
+	FT regular = 2;
+
+	for (int i = 0; i < F.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int v0 = F[i][j];
+			int v1 = F[i][(j + 1) % 3];
+			double reg = regular * 2e-2 / ((V[v0] - V[v1]).norm() + 1e-8);
+			reg *= reg;
+			add_entry_A(v0, v0, reg);
+			add_entry_A(v0, v1, -reg);
+			add_entry_A(v1, v0, -reg);
+			add_entry_A(v1, v1, reg);
+			add_entry_B(v0, reg * (V[v0] - V[v1]));
+			add_entry_B(v1, reg * (V[v1] - V[v0]));
+		}
+	}
+	for (auto& info : geometry_neighbor_pairs_) {
+		int v0 = info.first;
+		int v1 = info.second;
+
+		double reg = regular * 2e-2 / ((V[v0] - V[v1]).norm() + 1e-8);
+		reg *= reg;
+		add_entry_A(v0, v0, reg);
+		add_entry_A(v0, v1, -reg);
+		add_entry_A(v1, v0, -reg);
+		add_entry_A(v1, v1, reg);
+		add_entry_B(v0, reg * (V[v0] - V[v1]));
+		add_entry_B(v1, reg * (V[v1] - V[v0]));
+	}
+
+	SpMat A(num_entries, num_entries);
+	std::vector<T> tripletList;
+	for (auto& m : trips) {
+		tripletList.push_back(T(m.first / num_entries,
+			m.first % num_entries, m.second));
+	}
+	A.setFromTriplets(tripletList.begin(), tripletList.end());
+
+	printf("Solve...\n");
+	Eigen::SparseLU<Eigen::SparseMatrix<FT>> solver;
+    solver.analyzePattern(A);
+
+    solver.factorize(A);
+
+    //std::vector<Vector3> NV(V.size());
+    for (int j = 0; j < 3; ++j) {
+        VectorX result = solver.solve(B.col(j));
+
+        for (int i = 0; i < result.rows(); ++i) {
+        	V[i][j] = result[i];
+        }
+    }
+
 }

@@ -95,7 +95,7 @@ void Mesh::Normalize() {
 	}
 }
 
-void Mesh::ApplyTransform(Mesh& m) {
+void Mesh::ApplyTransform(const Mesh& m) {
 	auto& V = V_;
 	pos_ = m.GetTranslation();
 	scale_ = m.GetScale();

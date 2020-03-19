@@ -366,3 +366,77 @@ void Deformer::ReverseDeform(const Mesh& tar, Mesh* psrc) {
 	for (int i = 0; i < src_V.size(); ++i)
 		src_V[i] = V1.row(i);
 }
+
+void Deformer::DeformGraph(const UniformGrid& grid, Subdivision* sub) {
+	auto& V = sub->GraphV();
+	auto& E = sub->GraphE();
+
+	FT lambda = lambda_;
+	TerminateWhenSuccessCallback* callback =
+		callback_ == 0 ? 0 : &(*callback_);
+
+	
+	ceres::Problem problem;
+
+	//Move vertices
+	std::vector<ceres::ResidualBlockId> v_block_ids;
+	v_block_ids.reserve(V.size());
+	for (int i = 0; i < V.size(); ++i) {
+		ceres::CostFunction* cost_function = DistanceLoss::Create(&grid);
+		ceres::ResidualBlockId block_id = problem.AddResidualBlock(
+			cost_function, 0, V[i].data());
+		v_block_ids.push_back(block_id);			
+	}
+
+	//Enforce rigidity
+	std::vector<ceres::ResidualBlockId> edge_block_ids;
+	edge_block_ids.reserve(E.size());
+	for (auto& info : E) {
+		Vector3 v = V[info.first] - V[info.second];
+		ceres::CostFunction* cost_function = EdgeLoss::Create(v, lambda);
+		ceres::ResidualBlockId block_id = problem.AddResidualBlock(
+			cost_function, 0,
+			V[info.first].data(),
+			V[info.second].data()
+		);
+		edge_block_ids.push_back(block_id);		
+	}
+
+	ceres::Solver::Options options;
+	options.max_num_iterations = 100;
+	options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+	options.minimizer_progress_to_stdout = true;
+	options.num_threads = 1;
+	if (callback) {
+		double prev_cost = 1e30;
+		options.callbacks.push_back(callback);
+
+		while (true) {
+			ceres::Solver::Summary summary;
+			ceres::Solve(options, &problem, &summary);
+			if (std::abs(prev_cost - summary.final_cost) < 1e-6)
+				break;
+			prev_cost = summary.final_cost;
+		}
+	} else {
+		ceres::Solver::Summary summary;
+		ceres::Solve(options, &problem, &summary);
+	}
+
+	//V error
+	ceres::Problem::EvaluateOptions v_options;
+	v_options.residual_blocks = v_block_ids;
+	double v_cost;
+	problem.Evaluate(v_options, &v_cost, NULL, NULL, NULL);
+	std::cout<<"Vertices cost: "<<v_cost<<std::endl;
+
+	//E error
+	ceres::Problem::EvaluateOptions edge_options;
+	edge_options.residual_blocks = edge_block_ids;
+	FT edge_cost;
+	problem.Evaluate(edge_options, &edge_cost, NULL, NULL, NULL);
+	std::cout<<"Rigidity cost: "<<edge_cost<<std::endl;
+
+	FT final_cost = v_cost + edge_cost;
+	std::cout<<"Final cost: "<<final_cost<<std::endl;
+}
