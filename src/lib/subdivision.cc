@@ -7,7 +7,6 @@
 
 #include <Eigen/Dense>
 #include <Eigen/SparseCholesky>
-
 #include "delaunay.h"
 
 Subdivision::Subdivision()
@@ -534,7 +533,7 @@ void Subdivision::LinearSolve() {
 	A.setFromTriplets(tripletList.begin(), tripletList.end());
 
 	printf("Solve...\n");
-	Eigen::SparseLU<Eigen::SparseMatrix<FT>> solver;
+	Eigen::SimplicialLDLT<Eigen::SparseMatrix<FT>> solver;
     solver.analyzePattern(A);
 
     solver.factorize(A);
