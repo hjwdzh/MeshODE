@@ -39,7 +39,6 @@ class GraphDeformLayer(nn.Module):
 		return GraphDeformFunction.apply(src_V, src_E)
 
 def Finalize(src_V, src_F, src_E, src_to_graph, graph_V):
-	pass
-	#pyDeform.NormalizeByTemplate(src_V)
-	#pyDeform.SolveLinear(src_V, src_F, src_E, src_to_graph, graph_V)
-	#pyDeform.DenormalizeByTemplate(src_V)
+	pyDeform.NormalizeByTemplate(src_V)
+	pyDeform.SolveLinear(src_V, src_F, src_E, src_to_graph, graph_V)
+	pyDeform.DenormalizeByTemplate(src_V)

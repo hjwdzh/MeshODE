@@ -46,6 +46,8 @@ target_link_libraries(
 add_library(
     deform_optim
     src/lib/callback.h
+    src/lib/linear.cc
+    src/lib/linear.h
     src/lib/deformer.cc
     src/lib/deformer.h
     src/lib/edgeloss.h
@@ -137,6 +139,8 @@ add_library(
     src/interface/distance_layer.cc
     src/interface/graph_layer.h
     src/interface/graph_layer.cc
+    src/interface/linear_layer.h
+    src/interface/linear_layer.cc
     src/interface/mesh_tensor.h
     src/interface/mesh_tensor.cc
     src/interface/normalize.h

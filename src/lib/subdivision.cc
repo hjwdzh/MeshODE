@@ -7,7 +7,9 @@
 
 #include <Eigen/Dense>
 #include <Eigen/SparseCholesky>
+
 #include "delaunay.h"
+#include "linear.h"
 
 Subdivision::Subdivision()
 {
@@ -445,102 +447,11 @@ void Subdivision::calculateBarycentricCoordinate(
 }
 
 void Subdivision::LinearSolve() {
-	std::unordered_map<long long, FT> trips;
-	
 	auto& V = subdivide_mesh_.GetV();
 	auto& F = subdivide_mesh_.GetF();
 
-	int num_entries = V.size();
-	MatrixX B = MatrixX::Zero(num_entries, 3);
-	auto add_entry_A = [&](int x, int y, FT w) {
-		long long key = (long long)x * (long long)num_entries + (long long)y;
-		auto it = trips.find(key);
-		if (it == trips.end())
-			trips[key] = w;
-		else
-			it->second += w;
-	};
-	auto add_entry_B = [&](int m, const Vector3& v) {
-		B.row(m) += v;
-	};
-
-	std::vector<std::vector<int> > grid_cell(representative_vertices_.size());
-	for (int i = 0; i < representative_reference_.size(); ++i)
-		grid_cell[representative_reference_[i]].push_back(i);
-
-
-	for (int i = 0; i < grid_cell.size(); ++i) {
-		double weight = 1.0 / grid_cell[i].size();
-		double weight2 = weight * weight;
-		for (int j = 0; j < grid_cell[i].size(); ++j) {
-			for (int k = 0; k < grid_cell[i].size(); ++k) {
-				add_entry_A(grid_cell[i][j], grid_cell[i][k], weight2);
-			}
-		}
-		for (int j = 0; j < grid_cell[i].size(); ++j) {
-			add_entry_B(grid_cell[i][j], weight * representative_vertices_[i]);
-		}
-	}
-
-	for (int i = 0; i < V.size(); ++i) {
-		double weight = 1e-6;
-		add_entry_A(i, i, weight);
-		add_entry_B(i, weight *
-			representative_vertices_[representative_reference_[i]]);
-	}
-
-
-	FT regular = 2;
-
-	for (int i = 0; i < F.size(); ++i) {
-		for (int j = 0; j < 3; ++j) {
-			int v0 = F[i][j];
-			int v1 = F[i][(j + 1) % 3];
-			double reg = regular * 2e-2 / ((V[v0] - V[v1]).norm() + 1e-8);
-			reg *= reg;
-			add_entry_A(v0, v0, reg);
-			add_entry_A(v0, v1, -reg);
-			add_entry_A(v1, v0, -reg);
-			add_entry_A(v1, v1, reg);
-			add_entry_B(v0, reg * (V[v0] - V[v1]));
-			add_entry_B(v1, reg * (V[v1] - V[v0]));
-		}
-	}
-	for (auto& info : geometry_neighbor_pairs_) {
-		int v0 = info.first;
-		int v1 = info.second;
-
-		double reg = regular * 2e-2 / ((V[v0] - V[v1]).norm() + 1e-8);
-		reg *= reg;
-		add_entry_A(v0, v0, reg);
-		add_entry_A(v0, v1, -reg);
-		add_entry_A(v1, v0, -reg);
-		add_entry_A(v1, v1, reg);
-		add_entry_B(v0, reg * (V[v0] - V[v1]));
-		add_entry_B(v1, reg * (V[v1] - V[v0]));
-	}
-
-	SpMat A(num_entries, num_entries);
-	std::vector<T> tripletList;
-	for (auto& m : trips) {
-		tripletList.push_back(T(m.first / num_entries,
-			m.first % num_entries, m.second));
-	}
-	A.setFromTriplets(tripletList.begin(), tripletList.end());
-
-	printf("Solve...\n");
-	Eigen::SimplicialLDLT<Eigen::SparseMatrix<FT>> solver;
-    solver.analyzePattern(A);
-
-    solver.factorize(A);
-
-    //std::vector<Vector3> NV(V.size());
-    for (int j = 0; j < 3; ++j) {
-        VectorX result = solver.solve(B.col(j));
-
-        for (int i = 0; i < result.rows(); ++i) {
-        	V[i][j] = result[i];
-        }
-    }
-
+	LinearEstimation(V, F, geometry_neighbor_pairs_.begin(),
+		geometry_neighbor_pairs_.end(),
+		representative_reference_,
+		representative_vertices_);
 }

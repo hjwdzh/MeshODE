@@ -5,6 +5,7 @@
 #include "cad_layer.h"
 #include "distance_layer.h"
 #include "graph_layer.h"
+#include "linear_layer.h"
 #include "rigid_layer.h"
 
 namespace py = pybind11;
@@ -18,6 +19,7 @@ PYBIND11_MODULE(pyDeform, m) {
 	m.def("InitializeDeformTemplate", &InitializeDeformTemplate);
 	m.def("NormalizeByTemplate", &NormalizeByTemplate);
 	m.def("DenormalizeByTemplate", &DenormalizeByTemplate);
+	m.def("SolveLinear", &SolveLinear);
 
 	m.def("DistanceFieldLoss_forward", &DistanceFieldLoss_forward);
 	m.def("DistanceFieldLoss_backward", &DistanceFieldLoss_backward);
