@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
 
 	//Deform source to fit the reference
 	auto start = std::chrono::steady_clock::now();
-	Mesh src, ref, cad;
+	Mesh src, ref;
 	src.ReadOBJ(argv[1]);
 	ref.ReadOBJ(argv[2]);
 

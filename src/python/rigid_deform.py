@@ -1,12 +1,13 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/layers')
 
 from torch import nn
 import torch.optim as optim
 from torch.autograd import Function
 
-from rigid_deform_layer import RigidDeformLayer, Finalize
+from layers.rigid_deform_layer import RigidDeformLayer, Finalize
 import pyDeform
 
 source_path = sys.argv[1]
