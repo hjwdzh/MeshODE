@@ -3,8 +3,10 @@
 #include <torch/extension.h>
 
 void NormalizeByTemplate(
-	torch::Tensor tensorV)
+	torch::Tensor tensorV,
+	int param_id)
 {
+	auto& params = GetParams(param_id);
 #ifndef USE_DOUBLE
 	typedef float T;
 #else
@@ -22,8 +24,10 @@ void NormalizeByTemplate(
 }
 
 void DenormalizeByTemplate(
-	torch::Tensor tensorV)
+	torch::Tensor tensorV,
+	int param_id)
 {
+	auto& params = GetParams(param_id);
 #ifndef USE_DOUBLE
 	typedef float T;
 #else

@@ -9,16 +9,19 @@
 void StoreCadInformation(
 	torch::Tensor tensorV,
 	torch::Tensor tensorF,
-	torch::Tensor tensorE);
+	torch::Tensor tensorE,
+	int param_id);
 
 torch::Tensor CadEdgeLoss_forward(
 	torch::Tensor tensorV,
 	torch::Tensor tensorF,
-	torch::Tensor tensorE);
+	torch::Tensor tensorE,
+	int param_id);
 
 torch::Tensor CadEdgeLoss_backward(
 	torch::Tensor tensorV,
 	torch::Tensor tensorF,
-	torch::Tensor tensorE);
+	torch::Tensor tensorE,
+	int param_id);
 
 #endif

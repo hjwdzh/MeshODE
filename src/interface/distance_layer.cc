@@ -6,8 +6,9 @@
 
 
 torch::Tensor DistanceFieldLoss_forward(
-	torch::Tensor tensorV) {
+	torch::Tensor tensorV, int param_id) {
 
+	auto& params = GetParams(param_id);
 #ifndef USE_DOUBLE
 	typedef float T;
 	auto float_options = torch::TensorOptions().dtype(torch::kFloat32);
@@ -35,8 +36,9 @@ torch::Tensor DistanceFieldLoss_forward(
 }
 
 torch::Tensor DistanceFieldLoss_backward(
-	torch::Tensor tensorV) {
+	torch::Tensor tensorV, int param_id) {
 
+	auto& params = GetParams(param_id);
 	int v_size = tensorV.size(0);
 #ifndef USE_DOUBLE
 	typedef float T;

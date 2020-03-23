@@ -11,7 +11,8 @@
 void StoreCadInformation(
 	torch::Tensor tensorV,
 	torch::Tensor tensorF,
-	torch::Tensor tensorE)
+	torch::Tensor tensorE,
+	int param_id)
 {
 #ifndef USE_DOUBLE
 	typedef float T;
@@ -26,6 +27,8 @@ void StoreCadInformation(
 
 	int e_size = tensorE.size(0);
 	int f_size = tensorF.size(0);
+
+	auto& params = GetParams(param_id);
 
 	params.edge_offset.resize(e_size + f_size * 3);
 	params.edge_lambda.resize(e_size + f_size * 3);
@@ -76,8 +79,10 @@ void StoreCadInformation(
 torch::Tensor CadEdgeLoss_forward(
 	torch::Tensor tensorV,
 	torch::Tensor tensorF,
-	torch::Tensor tensorE) {
+	torch::Tensor tensorE,
+	int param_id) {
 
+	auto& params = GetParams(param_id);
 #ifndef USE_DOUBLE
 	typedef float T;
 #else
@@ -147,8 +152,10 @@ torch::Tensor CadEdgeLoss_forward(
 torch::Tensor CadEdgeLoss_backward(
 	torch::Tensor tensorV,
 	torch::Tensor tensorF,
-	torch::Tensor tensorE) {
+	torch::Tensor tensorE,
+	int param_id) {
 
+	auto& params = GetParams(param_id);
 #ifndef USE_DOUBLE
 	typedef float T;
 	auto float_options = torch::TensorOptions().dtype(torch::kFloat32);

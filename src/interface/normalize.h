@@ -4,9 +4,9 @@
 #include "deform_params.h"
 
 void NormalizeByTemplate(
-	torch::Tensor tensorV);
+	torch::Tensor tensorV, int param_id);
 
 void DenormalizeByTemplate(
-	torch::Tensor tensorV);
+	torch::Tensor tensorV, int param_id);
 
 #endif

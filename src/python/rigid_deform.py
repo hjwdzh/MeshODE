@@ -7,7 +7,7 @@ from torch import nn
 import torch.optim as optim
 from torch.autograd import Function
 
-from layers.rigid_deform_layer import RigidDeformLayer, Finalize
+from layers.rigid_loss_layer import RigidLossLayer, Finalize
 import pyDeform
 
 source_path = sys.argv[1]
@@ -16,7 +16,8 @@ output_path = sys.argv[3]
 src_V, src_F = pyDeform.LoadMesh(source_path)
 tar_V, tar_F = pyDeform.LoadMesh(reference_path)
 
-rigid_deform = RigidDeformLayer(src_V, src_F, tar_V, tar_F)
+rigid_deform = RigidLossLayer(src_V, src_F, tar_V, tar_F)
+param_id = rigid_deform.param_id
 src_V = nn.Parameter(src_V)
 
 optimizer = optim.Adam([src_V], lr=1e-3)
@@ -30,5 +31,5 @@ for it in range(0, niter):
 	if it % 100 == 0:
 		print('iter=%d loss=%.6f'%(it, loss.item()))
 
-Finalize(src_V)
+Finalize(src_V, param_id)
 pyDeform.SaveMesh(output_path, src_V, src_F)

@@ -9,7 +9,7 @@ void LinearEstimation(std::vector<Vector3>& V,
 	const Iter& E_begin, const Iter& E_end,
 	const std::vector<int>& references,
 	const std::vector<Vector3>& graphV,
-	double rigidity2)
+	double rigidity)
 {
 	std::unordered_map<long long, FT> trips;
 	
@@ -53,7 +53,7 @@ void LinearEstimation(std::vector<Vector3>& V,
 	}
 
 
-	FT regular = sqrt(rigidity2);
+	FT regular = rigidity;
 
 	for (int i = 0; i < F.size(); ++i) {
 		for (int j = 0; j < 3; ++j) {

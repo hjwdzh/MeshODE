@@ -8,14 +8,17 @@
 
 void StoreGraphInformation(
 	torch::Tensor tensorV,
-	torch::Tensor tensorE);
+	torch::Tensor tensorE,
+	int param_id);
 
 torch::Tensor GraphEdgeLoss_forward(
 	torch::Tensor tensorV,
-	torch::Tensor tensorE);
+	torch::Tensor tensorE,
+	int param_id);
 
 torch::Tensor GraphEdgeLoss_backward(
 	torch::Tensor tensorV,
-	torch::Tensor tensorE);
+	torch::Tensor tensorE,
+	int param_id);
 
 #endif

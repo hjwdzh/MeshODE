@@ -15,14 +15,16 @@ reference_path = sys.argv[2]
 output_path = sys.argv[3]
 rigidity = float(sys.argv[4])
 
-src_V, src_F, src_E, src_to_graph, graph_V, graph_E\
+src_V, src_F, src_E, src_to_graph, graph_V_src, graph_E_src\
 	= pyDeform.LoadCadMesh(source_path)
 
-tar_V, tar_F = pyDeform.LoadMesh(reference_path)
+tar_V, tar_F, tar_F, tar_to_graph, graph_V_tar, graph_E_tar\
+	= pyDeform.LoadCadMesh(reference_path)
 
 
-graph_deform = GraphLossLayer(graph_V, graph_E, tar_V, tar_F, rigidity)
-param_id = graph_deform.param_id
+graph_loss_src2tar = GraphLossLayer(\
+	graph_V_src, graph_E_src, tar_V, tar_F, rigidity)
+graph_loss_tar2src = GraphLossLayer(graph_V)
 graph_V = nn.Parameter(graph_V)
 
 optimizer = optim.Adam([graph_V], lr=1e-3)
@@ -36,5 +38,5 @@ for it in range(0, niter):
 	if it % 100 == 0:
 		print('iter=%d, loss=%.6f'%(it, loss.item()))
 
-Finalize(src_V, src_F, src_E, src_to_graph, graph_V, rigidity, param_id)
+Finalize(src_V, src_F, src_E, src_to_graph, graph_V)
 pyDeform.SaveMesh(output_path, src_V, src_F)

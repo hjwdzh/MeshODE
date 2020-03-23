@@ -9,6 +9,6 @@ void LinearEstimation(std::vector<Vector3>& V,
 	const Iter& E_begin, const Iter& E_end,
 	const std::vector<int>& references,
 	const std::vector<Vector3>& graphV,
-	double rigidity2 = 4.0);
+	double rigidity = 2.0);
 
 #endif

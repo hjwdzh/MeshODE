@@ -8,14 +8,17 @@
 
 void StoreRigidityInformation(
 	torch::Tensor tensorV,
-	torch::Tensor tensorF);
+	torch::Tensor tensorF,
+	int param_id);
 
 torch::Tensor RigidEdgeLoss_forward(
 	torch::Tensor tensorV,
-	torch::Tensor tensorF);
+	torch::Tensor tensorF,
+	int param_id);
 
 torch::Tensor RigidEdgeLoss_backward(
 	torch::Tensor tensorV,
-	torch::Tensor tensorF);
+	torch::Tensor tensorF,
+	int param_id);
 
 #endif

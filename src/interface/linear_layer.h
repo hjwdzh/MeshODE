@@ -9,6 +9,6 @@ void SolveLinear(
 	torch::Tensor tensorE,
 	torch::Tensor tensorRef,
 	torch::Tensor tensorGraphV,
-	double rigidity2);
+	double rigidity);
 
 #endif

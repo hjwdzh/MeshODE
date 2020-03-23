@@ -10,8 +10,10 @@
 
 void StoreRigidityInformation(
 	torch::Tensor tensorV,
-	torch::Tensor tensorF)
+	torch::Tensor tensorF,
+	int param_id)
 {
+	auto& params = GetParams(param_id);
 #ifndef USE_DOUBLE
 	typedef float T;
 	typedef Eigen::Vector3f V3;
@@ -45,8 +47,10 @@ void StoreRigidityInformation(
 
 torch::Tensor RigidEdgeLoss_forward(
 	torch::Tensor tensorV,
-	torch::Tensor tensorF) {
+	torch::Tensor tensorF,
+	int param_id) {
 
+	auto& params = GetParams(param_id);
 #ifndef USE_DOUBLE
 	typedef float T;
 #else
@@ -86,8 +90,10 @@ torch::Tensor RigidEdgeLoss_forward(
 
 torch::Tensor RigidEdgeLoss_backward(
 	torch::Tensor tensorV,
-	torch::Tensor tensorF) {
+	torch::Tensor tensorF,
+	int param_id) {
 
+	auto& params = GetParams(param_id);
 #ifndef USE_DOUBLE
 	typedef float T;
 	auto float_options = torch::TensorOptions().dtype(torch::kFloat32);

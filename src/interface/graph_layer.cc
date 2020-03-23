@@ -10,8 +10,10 @@
 
 void StoreGraphInformation(
 	torch::Tensor tensorV,
-	torch::Tensor tensorE)
+	torch::Tensor tensorE,
+	int param_id)
 {
+	auto& params = GetParams(param_id);
 #ifndef USE_DOUBLE
 	typedef float T;
 	typedef Eigen::Vector3f V3;
@@ -44,8 +46,10 @@ void StoreGraphInformation(
 
 torch::Tensor GraphEdgeLoss_forward(
 	torch::Tensor tensorV,
-	torch::Tensor tensorE) {
+	torch::Tensor tensorE,
+	int param_id) {
 
+	auto& params = GetParams(param_id);
 #ifndef USE_DOUBLE
 	typedef float T;
 #else
@@ -88,8 +92,10 @@ torch::Tensor GraphEdgeLoss_forward(
 
 torch::Tensor GraphEdgeLoss_backward(
 	torch::Tensor tensorV,
-	torch::Tensor tensorE) {
+	torch::Tensor tensorE,
+	int param_id) {
 
+	auto& params = GetParams(param_id);
 #ifndef USE_DOUBLE
 	typedef float T;
 	auto float_options = torch::TensorOptions().dtype(torch::kFloat32);

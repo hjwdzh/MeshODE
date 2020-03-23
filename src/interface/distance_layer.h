@@ -6,9 +6,11 @@
 #include "normalize.h"
 
 torch::Tensor DistanceFieldLoss_forward(
-	torch::Tensor tensorV);
+	torch::Tensor tensorV,
+	int param_id);
 
 torch::Tensor DistanceFieldLoss_backward(
-	torch::Tensor tensorV);
+	torch::Tensor tensorV,
+	int param_id);
 
 #endif

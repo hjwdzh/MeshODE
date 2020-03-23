@@ -24,8 +24,10 @@ struct DeformParams
 #endif
 };
 
-extern DeformParams params;
-void InitializeDeformTemplate(
+int CreateParams();
+DeformParams& GetParams(int param_id);
+
+int InitializeDeformTemplate(
 	torch::Tensor tensorV,
 	torch::Tensor tensorF,
 	int symmetry,
