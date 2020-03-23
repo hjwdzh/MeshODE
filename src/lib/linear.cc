@@ -8,7 +8,8 @@ void LinearEstimation(std::vector<Vector3>& V,
 	const std::vector<Eigen::Vector3i>& F,
 	const Iter& E_begin, const Iter& E_end,
 	const std::vector<int>& references,
-	const std::vector<Vector3>& graphV)
+	const std::vector<Vector3>& graphV,
+	double rigidity2)
 {
 	std::unordered_map<long long, FT> trips;
 	
@@ -52,7 +53,7 @@ void LinearEstimation(std::vector<Vector3>& V,
 	}
 
 
-	FT regular = 2;
+	FT regular = sqrt(rigidity2);
 
 	for (int i = 0; i < F.size(); ++i) {
 		for (int j = 0; j < 3; ++j) {
@@ -114,10 +115,12 @@ template void LinearEstimation<SIter>(std::vector<Vector3>& V,
 	const std::vector<Eigen::Vector3i>& F,
 	const SIter& E_begin, const SIter& E_end,
 	const std::vector<int>& references,
-	const std::vector<Vector3>& graphV);
+	const std::vector<Vector3>& graphV,
+	double rigidity2);
 
 template void LinearEstimation<VIter>(std::vector<Vector3>& V,
 	const std::vector<Eigen::Vector3i>& F,
 	const VIter& E_begin, const VIter& E_end,
 	const std::vector<int>& references,
-	const std::vector<Vector3>& graphV);
+	const std::vector<Vector3>& graphV,
+	double rigidity2);

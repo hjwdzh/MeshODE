@@ -7,7 +7,8 @@ void SolveLinear(
 	torch::Tensor tensorF,
 	torch::Tensor tensorE,
 	torch::Tensor tensorRef,
-	torch::Tensor tensorGraphV) {
+	torch::Tensor tensorGraphV,
+	double rigidity2) {
 
 	std::vector<Vector3> V;
 	std::vector<Eigen::Vector3i> F;
@@ -63,7 +64,7 @@ void SolveLinear(
 		}
 	}
 
-	LinearEstimation(V, F, E.begin(), E.end(), references, graphV);
+	LinearEstimation(V, F, E.begin(), E.end(), references, graphV, rigidity2);
 	for (int i = 0; i < v_size; ++i) {
 		for (int j = 0; j < 3; ++j) {
 			dataV[i * 3 + j] = V[i][j];
