@@ -4,40 +4,46 @@ from torch.autograd import Function
 import torch
 import pyDeform
 
+device = None
+
 class GraphLossFunction(Function):
 	@staticmethod
 	def forward(ctx, src_V, src_E, rigidity2, param_id):
+		global device
 		pid = param_id.tolist()
 
-		test_V = torch.from_numpy(src_V.data.numpy())
+		test_V = torch.from_numpy(src_V.data.cpu().numpy())
 		lossD = pyDeform.DistanceFieldLoss_forward(test_V, int(pid)) * 0.5
 		lossR = pyDeform.GraphEdgeLoss_forward(test_V, src_E, int(pid)) * 0.5
 
 		variables = [src_V, src_E, rigidity2, param_id]
 		ctx.save_for_backward(*variables)
 
-		return lossD.sum() + lossR.sum() * rigidity2.tolist()
+		return (lossD.sum() + lossR.sum() * rigidity2.tolist()).to(device)
 
 	@staticmethod
 	def backward(ctx, grad_h):
+		global device
 		src_V = ctx.saved_variables[0]
 		src_E = ctx.saved_variables[1]
 		rigidity2 = ctx.saved_variables[2]
 		param_id = ctx.saved_variables[3].tolist()
 
-		test_V = torch.from_numpy(src_V.data.numpy())
+		test_V = torch.from_numpy(src_V.data.cpu().numpy())
 		lossD_gradient = pyDeform.DistanceFieldLoss_backward(test_V, param_id)
 		lossR_gradient = pyDeform.GraphEdgeLoss_backward(test_V, src_E, param_id)
 
 		loss_grad = grad_h*(lossD_gradient + lossR_gradient*rigidity2.tolist())
-		return grad_h*(lossD_gradient + lossR_gradient*rigidity2.tolist()),\
+		return (grad_h*(lossD_gradient + lossR_gradient*rigidity2.tolist())).to(device),\
 			None, None, None
 
 
 class GraphLossLayer(nn.Module):
-	def __init__(self, src_V, src_E, tar_V, tar_F, rigidity):
+	def __init__(self, src_V, src_E, tar_V, tar_F, rigidity, d=torch.device('cpu')):
 		super(GraphLossLayer, self).__init__()
 
+		global device
+		device = d
 		self.param_id = torch.tensor(\
 			pyDeform.InitializeDeformTemplate(tar_V, tar_F, 0, 64))
 

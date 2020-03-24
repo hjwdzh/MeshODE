@@ -16,7 +16,7 @@ class ReverseLossLayer(nn.Module):
 		tar_V_numpy = tar_V.data.numpy()
 
 		tree = cKDTree(src_V_numpy)
-		dd, ii = tree.query(tar_V_numpy, k=1, n_jobs=8)
+		dd, ii = tree.query(tar_V_numpy, k=1, n_jobs=1)
 
 		src_V_c = src_V[ii]
 		loss = src_V_c - tar_V
