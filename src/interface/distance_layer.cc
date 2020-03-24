@@ -23,6 +23,7 @@ torch::Tensor DistanceFieldLoss_forward(
 	torch::Tensor loss = torch::full({v_size}, /*value=*/0, float_options);
 
 	auto dataL = static_cast<T*>(loss.storage().data());
+
 	for (int i = 0; i < v_size; ++i) {
 #ifndef USE_DOUBLE
 		dataL[i] = params.grid.DistanceFloat(dataV + i * 3);

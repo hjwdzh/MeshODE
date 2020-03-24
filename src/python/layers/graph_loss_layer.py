@@ -8,8 +8,10 @@ class GraphLossFunction(Function):
 	@staticmethod
 	def forward(ctx, src_V, src_E, rigidity2, param_id):
 		pid = param_id.tolist()
-		lossD = pyDeform.DistanceFieldLoss_forward(src_V, pid) * 0.5
-		lossR = pyDeform.GraphEdgeLoss_forward(src_V, src_E, pid) * 0.5
+
+		test_V = torch.from_numpy(src_V.data.numpy())
+		lossD = pyDeform.DistanceFieldLoss_forward(test_V, int(pid)) * 0.5
+		lossR = pyDeform.GraphEdgeLoss_forward(test_V, src_E, int(pid)) * 0.5
 
 		variables = [src_V, src_E, rigidity2, param_id]
 		ctx.save_for_backward(*variables)
@@ -23,9 +25,11 @@ class GraphLossFunction(Function):
 		rigidity2 = ctx.saved_variables[2]
 		param_id = ctx.saved_variables[3].tolist()
 
-		lossD_gradient = pyDeform.DistanceFieldLoss_backward(src_V, param_id)
-		lossR_gradient = pyDeform.GraphEdgeLoss_backward(src_V, src_E, param_id)
+		test_V = torch.from_numpy(src_V.data.numpy())
+		lossD_gradient = pyDeform.DistanceFieldLoss_backward(test_V, param_id)
+		lossR_gradient = pyDeform.GraphEdgeLoss_backward(test_V, src_E, param_id)
 
+		loss_grad = grad_h*(lossD_gradient + lossR_gradient*rigidity2.tolist())
 		return grad_h*(lossD_gradient + lossR_gradient*rigidity2.tolist()),\
 			None, None, None
 
