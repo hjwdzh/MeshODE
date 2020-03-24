@@ -11,7 +11,7 @@ Deform Shape A to fit shape B.
 
 ### Setup CMake Example
 ```
-cmake .. -DCMAKE_BUILD_TYPE=Release -Dceres_DIR=/orion/u/jingweih/3rd/ceres-solver/install/lib/cmake/Ceres -DCGAL_INCLUDE_PATH=/orion/u/jingweih/3rd/cgal-install/include -DEIGEN_INCLUDE_PATH=/orion/u/jingweih/3rd/eigen3 -DIGL_INCLUDE_PATH=/orion/u/jingweih/3rd -DTORCH_PATH=/orion/u/jingweih/pytorch/lib/python3.5/site-packages/torch
+cmake .. -DCMAKE_BUILD_TYPE=Release -Dceres_DIR=/orion/u/jingweih/3rd/ceres-solver/install/lib/cmake/Ceres -DCGAL_INCLUDE_PATH=/orion/u/jingweih/3rd/cgal-install/include -DEIGEN_INCLUDE_PATH=/orion/u/jingweih/3rd/eigen3 -DIGL_INCLUDE_PATH=/orion/u/jingweih/3rd -DTORCH_PATH=/orion/u/jingweih/pytorch/lib/python3.5/site-packages/torch -D_GLIBCXX_USE_CXX11_ABI=0
 ```
 
 ### Build
