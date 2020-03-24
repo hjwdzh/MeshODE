@@ -120,6 +120,7 @@ if(NOT TORCH_PATH)
     set(TORCH_PATH "/usr/local/lib/python3.7/site-packages/torch")
 endif()
 
+add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 
 add_subdirectory(pybind11)
 
