@@ -121,8 +121,7 @@ if(NOT TORCH_PATH)
 endif()
 
 
-find_package(pybind11)
-IF (pybind11_FOUND)
+add_subdirectory(pybind11)
 
 include_directories(${TORCH_PATH}/include)
 link_directories(${TORCH_PATH}/lib)
@@ -161,4 +160,3 @@ target_link_libraries(
 set_target_properties(pyDeform PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                          SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-ENDIF()
