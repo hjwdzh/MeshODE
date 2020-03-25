@@ -33,7 +33,6 @@ class GraphLossFunction(Function):
 		lossD_gradient = pyDeform.DistanceFieldLoss_backward(test_V, param_id)
 		lossR_gradient = pyDeform.GraphEdgeLoss_backward(test_V, src_E, param_id)
 
-		loss_grad = grad_h*(lossD_gradient + lossR_gradient*rigidity2.tolist())
 		return (grad_h*(lossD_gradient + lossR_gradient*rigidity2.tolist())).to(device),\
 			None, None, None
 
