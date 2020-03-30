@@ -251,6 +251,7 @@ void Subdivision::DelaunaySubdivision(
 void Subdivision::ComputeGeometryNeighbors(double thres) {
 	auto& subdivide_mesh = subdivide_mesh_;
 	auto& vertices = subdivide_mesh.GetV();
+	auto& faces = subdivide_mesh.GetF();
 
 	double step = thres;
 
@@ -318,6 +319,17 @@ void Subdivision::ComputeGeometryNeighbors(double thres) {
 		for (auto& e : gridE) {
 			int v1 = vindices[e.first];
 			int v2 = vindices[e.second];
+			if (v1 > v2)
+				std::swap(v1, v2);
+			if (v1 == v2)
+				continue;
+			geometry_neighbor_pairs_.insert(std::make_pair(v1, v2));
+		}
+	}
+	for (int i = 0; i < faces.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int v1 = faces[i][j];
+			int v2 = faces[i][(j + 1) % 3];
 			if (v1 > v2)
 				std::swap(v1, v2);
 			if (v1 == v2)
