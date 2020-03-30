@@ -137,7 +137,7 @@ std::vector<torch::Tensor> LoadCadMesh(
 #endif
 
 	tensorE = torch::full({(long long)neighbors.size(), 2}, 0, int_options);
-	tensorSrc2Graph = torch::full({(long long)references.size(), 2},
+	tensorSrc2Graph = torch::full({(long long)references.size(), 1},
 		0, int_options);
 	tensorGraphV = torch::full({(long long)graph_vertices.size(), 3},
 		0, float_options);
