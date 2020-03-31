@@ -50,6 +50,7 @@ The way to run them is by
 cd build
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 python ../src/python/rigid_deform.py ../data/source.obj ../data/reference.obj ./rigid_output.obj
-python ../src/python/cad_deform2.py ../data/cad.obj ../data/reference.obj ./cad_output.obj 0.3
+python ../src/python/cad_deform2.py ../data/cad.obj ../data/reference.obj ./cad_output.obj 1
+python ../src/python/cad_neural_deform2.py ../data/cad.obj ../data/reference.obj ./cad_output.obj 0 cuda
 ```
 
