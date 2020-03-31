@@ -41,6 +41,7 @@ class NeuralODE():
 
         self.func = ODEFunc()
         self.func = self.func.to(device)
+        self.device = device
 
     def parameters(self):
         return self.func.parameters()
@@ -51,3 +52,7 @@ class NeuralODE():
 
     def inverse(self, u):
         return odeint(self.func, u, self.timing_inv)[1]
+
+    def integrate(self, u, t1, t2, device):
+        new_time = torch.from_numpy(np.array([t1,t2]).astype('float32')).to(device)
+        return odeint(self.func, u, new_time)[1]
