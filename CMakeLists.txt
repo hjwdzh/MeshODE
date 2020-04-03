@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.1)
 project(ARAP)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 14)
@@ -11,37 +15,20 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS}")
 set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG}")
 
-find_package(ceres REQUIRED)
+set(CERES_INCLUDE_PATH "3rd_party/ceres-solver/include")
+set(IGL_INCLUDE_PATH "3rd_party/libigl/include")
+set(EIGEN_INCLUDE_PATH "3rd_party/eigen")
 
-include_directories(${ceres_DIR}/../../../include)
-
-IF (ceres_DIR)
-  set(CERES_INCLUDE_PATH "${ceres_DIR}/../../../include")
-endif()
 IF (NOT CGAL_INCLUDE_PATH)
   find_package(CGAL)
   include(${CGAL_USE_FILE})
 ELSE()
   include_directories(${CGAL_INCLUDE_PATH})
 endif()
-IF(NOT EIGEN_INCLUDE_PATH)
-    set(EIGEN_INCLUDE_PATH "/usr/include/eigen3")
-endif()
-IF(NOT CERES_INCLUDE_PATH)
-    set(CERES_INCLUDE_PATH "/usr/local/include/ceres")
-endif()
-message(${EIGEN_INCLUDE_PATH})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/lib)
 
-if(NOT IGL_INCLUDE_PATH)
-    message('IGL_INCLUDE_PATH is set default as /usr/include/igl')
-    message('Consider to use -DIGL_INCLUDE_PATH your_path to specialize your path instead.')
-    set(IGL_INCLUDE_PATH "/usr/include/igl")
-endif()
-
+include_directories(${CERES_INCLUDE_PATH})
 include_directories(${IGL_INCLUDE_PATH})
 include_directories(${EIGEN_INCLUDE_PATH})
-
 
 add_library(
     deform_mesh
@@ -120,16 +107,26 @@ target_link_libraries(
     deform_optim
 )
 
+execute_process (
+    COMMAND python -c "import sys; print('.'.join(sys.version.split(' (')[0].split('.')[:2]))"
+    OUTPUT_VARIABLE PY_VERSION
+)
+execute_process (
+    COMMAND python -c "import subprocess; print('/'.join(subprocess.check_output(['which', 'python']).decode('utf-8').split('/')[:-2]))"
+    OUTPUT_VARIABLE PY_BASEDIR
+)
+string(STRIP ${PY_VERSION} PY_VERSION)
+string(STRIP ${PY_BASEDIR} PY_BASEDIR)
 
 if(NOT TORCH_PATH)
-    message('TORCH_PATH is set default as /usr/local/lib/python3.7/site-packages/torch.')
+    set(TORCH_PATH "${PY_BASEDIR}/lib/python${PY_VERSION}/site-packages/torch")
+    message("TORCH_PATH is set default to ${TORCH_PATH}")
     message('Consider to use -DTORCH_PATH your_path to specialize your path instead.')
-    set(TORCH_PATH "/usr/local/lib/python3.7/site-packages/torch")
 endif()
 
 add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 
-add_subdirectory(pybind11)
+add_subdirectory("3rd_party/pybind11")
 
 include_directories(${TORCH_PATH}/include)
 link_directories(${TORCH_PATH}/lib)
@@ -166,5 +163,5 @@ target_link_libraries(
 )
 
 set_target_properties(pyDeform PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
-                                         SUFFIX "${PYTHON_MODULE_EXTENSION}")
+                                          SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
