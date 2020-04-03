@@ -13,6 +13,11 @@ set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG}")
 
 find_package(ceres REQUIRED)
 
+include_directories(${ceres_DIR}/../../../include)
+
+IF (ceres_DIR)
+  set(CERES_INCLUDE_PATH "${ceres_DIR}/../../../include")
+endif()
 IF (NOT CGAL_INCLUDE_PATH)
   find_package(CGAL)
   include(${CGAL_USE_FILE})
@@ -22,7 +27,10 @@ endif()
 IF(NOT EIGEN_INCLUDE_PATH)
     set(EIGEN_INCLUDE_PATH "/usr/include/eigen3")
 endif()
-message(${EIGEN_INCLUDE_PATH})    
+IF(NOT CERES_INCLUDE_PATH)
+    set(CERES_INCLUDE_PATH "/usr/local/include/ceres")
+endif()
+message(${EIGEN_INCLUDE_PATH})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/lib)
 
 if(NOT IGL_INCLUDE_PATH)
@@ -33,7 +41,7 @@ endif()
 
 include_directories(${IGL_INCLUDE_PATH})
 include_directories(${EIGEN_INCLUDE_PATH})
-include_directories(${ceres_DIR}/../../../include)
+
 
 add_library(
     deform_mesh
