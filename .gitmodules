@@ -1,0 +1,15 @@
+[submodule "ceres-solver"]
+    path = 3rd_party/ceres-solver
+    url = https://ceres-solver.googlesource.com/ceres-solver
+
+[submodule "eigen"]
+    path = 3rd_party/eigen
+    url = https://gitlab.com/libeigen/eigen.git
+
+[submodule "libigl"]
+    path = 3rd_party/libigl
+    url = https://github.com/libigl/libigl.git
+
+[submodule "externals/pybind11"]
+    path = 3rd_party/pybind11
+    url = git@github.com:pybind/pybind11.git
