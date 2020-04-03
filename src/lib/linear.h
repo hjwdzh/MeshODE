@@ -11,4 +11,7 @@ void LinearEstimation(std::vector<Vector3>& V,
 	const std::vector<Vector3>& graphV,
 	double rigidity = 2.0);
 
+void LinearEstimationWithRot(double* V, int* F, double* TV,
+	int num_V, int num_F);
+
 #endif

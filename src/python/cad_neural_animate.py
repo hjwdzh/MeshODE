@@ -41,10 +41,11 @@ reverse_loss = ReverseLossLayer()
 #func = func.to(device)
 
 if os.path.exists('models/func.ckpt'):
-	checkpoint = torch.load('models/func.ckpt',map_location=torch.device('cpu'))
+	checkpoint = torch.load('models/func.ckpt')
 
 	optimizer = checkpoint['optim']
 	func = checkpoint['func']
+	func.func = func.func.to(device)
 else:
 	func = NeuralODE(device)
 	optimizer = optim.Adam(func.parameters(), lr=1e-3)
@@ -93,6 +94,8 @@ V1_origin = V1_copy.clone()
 
 
 for i in range(26):
+	if i != 25:
+		continue
 	V1_deform = V1_origin.clone()
 	V1_copy = V1_origin.clone().to(device)
 	if i != 0:
@@ -100,11 +103,19 @@ for i in range(26):
 	V1_copy = torch.from_numpy(V1_copy.data.cpu().numpy())
 
 	src_to_src = torch.from_numpy(np.array([i for i in range(V1_origin.shape[0])]).astype('int32'))
+	E1 = np.zeros((F1.shape[0] * 3, 2), dtype='int32')
+	F1_numpy = F1.numpy()
+	E1[:F1.shape[0],:] = F1_numpy[:,0:2]
+	E1[F1.shape[0]:F1.shape[0]*2,:] = F1_numpy[:,1:3]
+	E1[F1.shape[0]*2:,0] = F1_numpy[:,2]
+	E1[F1.shape[0]*2:,1] = F1_numpy[:,0]
+	E1 = torch.from_numpy(E1)
 
-	pyDeform.SolveLinear(V1_deform, F1, E1, src_to_src, V1_copy, 1)
+	pyDeform.SolveLinear(V1_deform, F1, E1, src_to_src, V1_copy, 1, 1)
 	pyDeform.DenormalizeByTemplate(V1_deform, param_id2.tolist())
 	pyDeform.SaveMesh('result/src-%02d.obj'%(i), V1_deform, F1)
 
+exit(0)
 V2_copy = V2.clone()
 pyDeform.NormalizeByTemplate(V2_copy, param_id2.tolist())
 V2_origin = V2_copy.clone()
@@ -118,6 +129,6 @@ for i in range(26):
 
 	src_to_src = torch.from_numpy(np.array([i for i in range(V2_origin.shape[0])]).astype('int32'))
 
-	pyDeform.SolveLinear(V2_deform, F2, E2, src_to_src, V2_copy, 1)
+	pyDeform.SolveLinear(V2_deform, F2, E2, src_to_src, V2_copy, 1, 1)
 	pyDeform.DenormalizeByTemplate(V2_deform, param_id2.tolist())
 	pyDeform.SaveMesh('result/tar-%02d.obj'%(i), V2_deform, F2)

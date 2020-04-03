@@ -90,6 +90,6 @@ V1_copy = torch.from_numpy(V1_copy.data.cpu().numpy())
 
 src_to_src = torch.from_numpy(np.array([i for i in range(V1_origin.shape[0])]).astype('int32'))
 
-pyDeform.SolveLinear(V1_origin, F1, E1, src_to_src, V1_copy, 0.5)
+pyDeform.SolveLinear(V1_origin, F1, E1, src_to_src, V1_copy, 1, 1)
 pyDeform.DenormalizeByTemplate(V1_origin, param_id2.tolist())
 pyDeform.SaveMesh(output_path, V1_origin, F1)

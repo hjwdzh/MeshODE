@@ -46,7 +46,6 @@ int main(int argc, char** argv) {
 
 	Subdivision sub;
 	sub.Subdivide(cad, 2e-2);
-
 	sub.ComputeGeometryNeighbors(1.5e-2);
 	sub.ComputeRepresentativeGraph(1e-2);
 
@@ -82,10 +81,12 @@ int main(int argc, char** argv) {
 	}
 
 	if (!need_callback) {
+		
 		Deformer deformer(lambda);
 		//deformer.DeformSubdivision(grid, &sub);
 		deformer.DeformGraph(grid, &sub);
 		sub.LinearSolve();
+		
 	} else {
 		Deformer deformer(lambda, callback);
 
@@ -114,5 +115,6 @@ int main(int argc, char** argv) {
 	std::cout<<"Deformed"<<std::endl;
 
 	subdivide_mesh.WriteOBJ(argv[3]);
+
 	return 0;
 }

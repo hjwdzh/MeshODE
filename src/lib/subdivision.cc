@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <queue>
+#include <set>
 #include <unordered_map>
 
 #include <Eigen/Dense>
@@ -467,3 +468,182 @@ void Subdivision::LinearSolve() {
 		representative_reference_,
 		representative_vertices_);
 }
+
+/*
+void Subdivision::Subdivide(const Mesh& mesh, double len_thres) {
+	subdivide_mesh_ = mesh;
+	auto&V = subdivide_mesh_.GetV();
+	auto&F = subdivide_mesh_.GetF();
+	std::vector<int> E2E(F.size() * 3);
+
+	std::map<std::pair<int, int>, int> e2i;
+	for (int i = 0; i < F.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int v0 = F[i][j];
+			int v1 = F[i][(j + 1) % 3];
+			auto k1 = std::make_pair(v0, v1);
+			e2i[k1] = i * 3 + j;
+		}
+	}
+	for (int i = 0; i < F.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int v0 = F[i][j];
+			int v1 = F[i][(j + 1) % 3];
+			auto k1 = std::make_pair(v1, v0);
+			E2E[i * 3 + j] = e2i[k1];
+		}
+	}
+
+    typedef std::pair<double, int> Edge;
+
+    if (len_thres < 0) {
+    	len_thres = 1e30;
+    	for (int i = 0; i < F.size(); ++i) {
+    		for (int j = 0; j < 3; ++j) {
+    			int v0 = F[i][j];
+    			int v1 = F[i][(j + 1) % 3];
+    			if (v0 < v1) {
+    				double len = (V[v0] - V[v1]).norm();
+    				if (len < len_thres)
+    					len_thres = len;
+    			}
+    		}
+    	}
+    }
+
+    std::priority_queue<Edge> queue;
+    for (int i = 0; i < E2E.size(); ++i) {
+        int v0 = F[i / 3][i % 3], v1 = F[i / 3][(i + 1) % 3];
+        double length = (V[v0] - V[v1]).norm();
+        if (length > len_thres) {
+            int other = E2E[i];
+            if (other > i)
+            	queue.push(Edge(length, i));
+        }
+    }
+
+    int nV = V.size(), nF = F.size();
+
+    int counter = 0;
+    while (!queue.empty()) {
+        counter += 1;
+        Edge edge = queue.top();
+        queue.pop();
+        int e0 = edge.second, e1 = E2E[e0];
+        int f0 = e0 / 3, f1 = (e1 / 3);
+        int v0 = F[f0][e0 % 3], v0p = F[f0][(e0 + 2) % 3], v1 = F[f0][(e0 + 1) % 3];
+
+        // filter outdated edges
+        if ((V[v0] - V[v1]).norm() != edge.first) {
+            continue;
+        }
+        int v1p = F[f1][(e1 + 2) % 3];
+        int vn = nV++;
+
+        if (nV > V.size()) {
+            V.resize(V.size() * 2);
+        }
+
+        V[vn] = (V[v0] + V[v1]) * 0.5f;
+
+        int f2 = (nF++);
+        int f3 = nF++;
+        if (nF > F.size()) {
+            F.resize(std::max(nF, (int)F.size() * 2));
+            E2E.resize(F.size() * 3);
+        }
+
+        F[f0] << vn, v0p, v0;
+		F[f1] << vn, v0, v1p;
+		F[f2] << vn, v1p, v1;
+        F[f3] << vn, v1, v0p;
+
+        auto sE2E = [&](int a, int b) {
+            E2E[a] = b;
+            E2E[b] = a;
+        };
+
+        const int e0p = E2E[e0 / 3 * 3 + (e0 + 2) % 3], e0n = E2E[e0 / 3 * 3 + (e0 + 1) % 3];
+        sE2E(3 * f0 + 0, 3 * f3 + 2);
+        sE2E(3 * f0 + 1, e0p);
+        sE2E(3 * f3 + 1, e0n);
+
+        const int e1p = E2E[e1 / 3 * 3 + (e1 + 2) % 3], e1n = E2E[e1 / 3 * 3 + (e1 + 1) % 3];
+        sE2E(3 * f0 + 2, 3 * f1 + 0);
+        sE2E(3 * f1 + 1, e1n);
+        sE2E(3 * f1 + 2, 3 * f2 + 0);
+        sE2E(3 * f2 + 1, e1p);
+        sE2E(3 * f2 + 2, 3 * f3 + 0);
+
+        auto schedule = [&](int f) {
+            for (int i = 0; i < 3; ++i) {
+                double length = (V[F[f][i]] - V[F[f][(i + 1) % 3]]).norm();
+                if (length > len_thres * 0.8)
+                    queue.push(Edge(length, f * 3 + i));
+            }
+        };
+
+        schedule(f0);
+        schedule(f2);
+        schedule(f1);
+        schedule(f3);
+    }
+    F.resize(nF);
+	V.resize(nV);
+	E2E.resize(nF * 3);
+}
+
+void Subdivision::Subdivide(const Mesh& mesh, double len_thres)
+{
+	subdivide_mesh_ = mesh;
+
+	auto& subdivide_mesh = subdivide_mesh_;
+	auto& V = subdivide_mesh.GetV();
+	auto& F = subdivide_mesh.GetF();
+
+	double max_len = 0;
+	for (int i = 0; i < F.size(); ++i) {
+		for (int j = 0; j < 3; ++j) {
+			int v0 = F[i][j];
+			int v1 = F[i][(j + 1) % 3];
+			double len = (V[v0] - V[v1]).norm();
+			if (len > max_len)
+				max_len = len;
+		}
+	}
+	while (max_len > len_thres) {
+		max_len /= 2;
+		std::map<std::pair<int, int>, int> edge_indices;
+		int fsize = F.size();
+		for (int i = 0; i < fsize; ++i) {
+			int vids[3];
+			for (int j = 0; j < 3; ++j) {
+				int v0 = F[i][j];
+				int v1 = F[i][(j + 1) % 3];
+				if (v0 > v1) {
+					std::swap(v0, v1);
+				}
+				auto key = std::make_pair(v0, v1);
+				int vid = -1;
+				if (edge_indices.count(key) == 0) {
+					auto v = (V[v0] + V[v1]) * 0.5;
+					edge_indices[key] = V.size();
+					vid = V.size();
+					V.push_back(v);
+				} else {
+					vid = edge_indices[key];
+				}
+				vids[j] = vid;
+			}
+			int v0 = F[i][0];
+			int v1 = F[i][1];
+			int v2 = F[i][2];
+			F[i] = Eigen::Vector3i(v0, vids[0], vids[2]);
+			F.push_back(Eigen::Vector3i(vids[0], vids[1], vids[2]));
+			F.push_back(Eigen::Vector3i(vids[0], v1, vids[1]));
+			F.push_back(Eigen::Vector3i(vids[2], vids[1], v2));
+		}
+	}
+}
+
+*/

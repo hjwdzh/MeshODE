@@ -53,5 +53,5 @@ for it in range(0, niter):
 				break
 		prev_loss_src, prev_loss_tar = current_loss_src, current_loss_tar
 
-Finalize(src_V, src_F, src_E, src_to_graph, graph_V, rigidity, param_id)
+Finalize(src_V, src_F, src_E, src_to_graph, graph_V, 1, param_id)
 pyDeform.SaveMesh(output_path, src_V, src_F)

@@ -3,6 +3,10 @@
 #include <set>
 #include <unordered_map>
 
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+
 template<class Iter>
 void LinearEstimation(std::vector<Vector3>& V,
 	const std::vector<Eigen::Vector3i>& F,
@@ -92,7 +96,6 @@ void LinearEstimation(std::vector<Vector3>& V,
 	}
 	A.setFromTriplets(tripletList.begin(), tripletList.end());
 
-	printf("Linear Solve...\n");
 	Eigen::SimplicialLDLT<Eigen::SparseMatrix<FT>> solver;
     solver.analyzePattern(A);
 
@@ -106,6 +109,124 @@ void LinearEstimation(std::vector<Vector3>& V,
         	V[i][j] = result[i];
         }
     }
+}
+
+void LinearEstimationWithRot(double* V, int* F, double* TV,
+	int num_V, int num_F) {
+	std::vector<int> E(num_F * 6);
+	int num_E = 0;
+	for (int i = 0; i < num_F; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			E[num_E++] = F[i * 3 + j];
+			E[num_E++] = F[i * 3 + (j + 1) % 3];
+		}
+	}
+	num_E /= 2;
+	std::vector<std::set<int> > links(num_V);
+	std::vector<Eigen::Matrix3d> rotations(num_V);
+	std::vector<double> scales(num_V);
+
+	for (int i = 0; i < num_E; ++i) {
+		int v1 = E[i * 2];
+		int v2 = E[i * 2 + 1];
+		links[v1].insert(v2);
+		links[v2].insert(v1);
+	}
+
+	for (int i = 0; i < num_V; ++i) {
+		Eigen::Matrix3d covariance = Eigen::Matrix3d::Zero();
+
+		double* current_v = V + i * 3;
+		double* current_tv = TV + i * 3;
+
+		double len_origin = 0, len_current = 0;
+		for (auto& p : links[i]) {
+			double* next_v = V + p * 3;
+			double* next_tv = TV + p * 3;
+
+			Eigen::Vector3d d1(next_v[0] - current_v[0],
+				next_v[1] - current_v[1],
+				next_v[2] - current_v[2]);
+			Eigen::Vector3d d2(next_tv[0] - current_tv[0],
+				next_tv[1] - current_tv[1],
+				next_tv[2] - current_tv[2]);
+
+			len_origin += d1.norm();
+			len_current += d2.norm();
+			covariance += d2 * d1.transpose();
+		}
+		double scale = len_current / (len_origin + 1e-8);
+		Eigen::JacobiSVD<Eigen::MatrixXd> svd(covariance,
+			Eigen::ComputeThinU | Eigen::ComputeThinV);
+		Eigen::Matrix3d U = svd.matrixU();
+		Eigen::Matrix3d VT = svd.matrixV().transpose();
+		Eigen::Matrix3d R = U * VT;
+		rotations[i] = R;
+		scales[i] = scale;
+	}
+
+	std::unordered_map<long long, FT> trips;
+	
+	int num_entries = num_V;
+	Eigen::MatrixXd B = Eigen::MatrixXd::Zero(num_entries, 3);
+	auto add_entry_A = [&](int x, int y, FT w) {
+		long long key = (long long)x * (long long)num_entries + (long long)y;
+		auto it = trips.find(key);
+		if (it == trips.end())
+			trips[key] = w;
+		else
+			it->second += w;
+	};
+	auto add_entry_B = [&](int m, const Eigen::Vector3d& v) {
+		B.row(m) += v;
+	};
+
+	for (int i = 0; i < num_V; ++i) {
+		add_entry_A(i, i, 1);
+		add_entry_B(i, Eigen::Vector3d(TV[i * 3],
+			TV[i * 3 + 1], TV[i * 3 + 2]));
+	}
+
+	double regulation = 1.0;
+	for (int i = 0; i < num_E; ++i) {
+		for (int j = 0; j < 2; ++j) {
+			int v0 = E[i * 2 + j];
+			int v1 = E[i * 2 + 1 - j];
+			double* V0 = V + v0 * 3;
+			double* V1 = V + v1 * 3;
+			Eigen::Vector3d off1(V1[0] - V0[0], V1[1] - V0[1], V1[2] - V0[2]);
+			double reg = regulation * 2e-2 / off1.norm();
+			off1 = scales[v0] * rotations[v0] * off1;
+			add_entry_A(v0, v0, reg);
+			add_entry_A(v0, v1, -reg);
+			add_entry_A(v1, v0, -reg);
+			add_entry_A(v1, v1, reg);
+			add_entry_B(v0, -reg * off1);
+			add_entry_B(v1, reg * off1);			
+		}
+	}
+
+	typedef Eigen::Triplet<double> T;
+	Eigen::SparseMatrix<double> A(num_entries, num_entries);
+	std::vector<T> tripletList;
+	for (auto& m : trips) {
+		tripletList.push_back(T(m.first / num_entries,
+			m.first % num_entries, m.second));
+	}
+	A.setFromTriplets(tripletList.begin(), tripletList.end());
+
+	Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+    solver.analyzePattern(A);
+
+    solver.factorize(A);
+
+    for (int j = 0; j < 3; ++j) {
+        Eigen::VectorXd result = solver.solve(B.col(j));
+
+        for (int i = 0; i < result.rows(); ++i) {
+        	V[i * 3 + j] = result[i];
+        }
+    }	
 }
 
 typedef std::set<std::pair<int,int> >::iterator SIter;

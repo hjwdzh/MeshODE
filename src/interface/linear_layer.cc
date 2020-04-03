@@ -8,7 +8,8 @@ void SolveLinear(
 	torch::Tensor tensorE,
 	torch::Tensor tensorRef,
 	torch::Tensor tensorGraphV,
-	double rigidity) {
+	double rigidity,
+	int with_rot) {
 
 	std::vector<Vector3> V;
 	std::vector<Eigen::Vector3i> F;
@@ -64,7 +65,12 @@ void SolveLinear(
 		}
 	}
 
-	LinearEstimation(V, F, E.begin(), E.end(), references, graphV, rigidity);
+	if (!with_rot)
+		LinearEstimation(V, F, E.begin(), E.end(),
+			references, graphV, rigidity);
+	else
+		LinearEstimationWithRot((double*)V.data(), (int*)F.data(),
+			(double*)graphV.data(), V.size(), F.size());
 	for (int i = 0; i < v_size; ++i) {
 		for (int j = 0; j < 3; ++j) {
 			dataV[i * 3 + j] = V[i][j];
