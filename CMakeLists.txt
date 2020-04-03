@@ -14,6 +14,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS}")
 set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG}")
+set(Ceres_DIR "/home/maxjiang/Codes/ShapeDeform/3rd_party/ceres-solver/cmake/Ceres")
+
+find_package(Ceres REQUIRED)
 
 set(CERES_INCLUDE_PATH "3rd_party/ceres-solver/include")
 set(IGL_INCLUDE_PATH "3rd_party/libigl/include")

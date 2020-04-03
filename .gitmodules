@@ -10,6 +10,10 @@
     path = 3rd_party/libigl
     url = https://github.com/libigl/libigl.git
 
-[submodule "externals/pybind11"]
+[submodule "pybind11"]
     path = 3rd_party/pybind11
     url = git@github.com:pybind/pybind11.git
+
+[submodule "cgal"]
+    path = 3rd_party/cgal
+    url = https://github.com/CGAL/cgal.git
