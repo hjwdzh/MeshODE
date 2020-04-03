@@ -11,10 +11,24 @@ Deform Shape A to fit shape B.
 
 ### Installing prerequisites
 ```
-# install CGAL
-sudo apt-get install libcgal-dev
-# install CERES
+# recursively clone all 3rd party submodules
+bash get_submodules.sh
 
+# install CERES
+sudo apt-get install cmake
+sudo apt-get install libgoogle-glog-dev
+sudo apt-get install libatlas-base-dev
+sudo apt-get install libeigen3-dev
+sudo apt-get install libsuitesparse-dev
+sudo add-apt-repository ppa:bzindovic/suitesparse-bugfix-1319687
+sudo apt-get update
+sudo apt-get install libsuitesparse-dev
+mkdir 3rd_party/ceres-solver/ceres-bin
+cd 3rd_party/ceres-solver/ceres-bin
+cmake -DEXPORT_BUILD_DIR=ON ..
+make -j4
+make test
+sudo make install
 ```
 
 ### Setup CMake Example

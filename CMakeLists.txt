@@ -21,6 +21,7 @@ find_package(Ceres REQUIRED)
 set(CERES_INCLUDE_PATH "3rd_party/ceres-solver/include")
 set(IGL_INCLUDE_PATH "3rd_party/libigl/include")
 set(EIGEN_INCLUDE_PATH "3rd_party/eigen")
+set(CGAL_DIR "3rd_party/cgal")
 
 IF (NOT CGAL_INCLUDE_PATH)
   find_package(CGAL)
@@ -32,6 +33,7 @@ endif()
 include_directories(${CERES_INCLUDE_PATH})
 include_directories(${IGL_INCLUDE_PATH})
 include_directories(${EIGEN_INCLUDE_PATH})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/lib)
 
 add_library(
     deform_mesh
@@ -127,7 +129,7 @@ if(NOT TORCH_PATH)
     message('Consider to use -DTORCH_PATH your_path to specialize your path instead.')
 endif()
 
-add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1››)
 
 add_subdirectory("3rd_party/pybind11")
 

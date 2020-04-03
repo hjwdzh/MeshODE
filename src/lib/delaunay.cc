@@ -11,7 +11,6 @@
 #include <CGAL/Triangulation_vertex_base_3.h>
 
 #include <iostream>
-#include <vector>
 
 // types for 2D Delaunay
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
