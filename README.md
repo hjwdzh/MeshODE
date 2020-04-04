@@ -14,7 +14,10 @@ Deform Shape A to fit shape B.
 # recursively clone all 3rd party submodules
 bash get_submodules.sh
 
-# install CERES
+# install python requirements
+pip install -r requirements.txt
+
+# install CERES (For Ubuntu)
 sudo apt-get install cmake
 sudo apt-get install libgoogle-glog-dev
 sudo apt-get install libatlas-base-dev
@@ -29,18 +32,21 @@ cmake -DEXPORT_BUILD_DIR=ON ..
 make -j4
 make test
 sudo make install
-```
 
-### Setup CMake Example
-```
-cmake .. -DCMAKE_BUILD_TYPE=Release -Dceres_DIR=/orion/u/jingweih/3rd/ceres-solver/install/lib/cmake/Ceres -DCGAL_INCLUDE_PATH=/orion/u/jingweih/3rd/cgal-install/include -DEIGEN_INCLUDE_PATH=/orion/u/jingweih/3rd/eigen3 -DIGL_INCLUDE_PATH=/orion/u/jingweih/3rd -DTORCH_PATH=/orion/u/jingweih/pytorch/lib/python3.5/site-packages/torch -D_GLIBCXX_USE_CXX11_ABI=0
+# install CERES (for Mac, Homebrew)
+brew install ceres-solver --HEAD
 ```
 
 ### Build
 ```
 mkdir build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DIGL_INCLUDE_PATH= -DTORCH_PATH=XXX
+cmake ..
 make -j8
+```
+Note that when torch must be imported before the pyDeform package in Python. i.e.,
+```python
+import torch
+import pyDeform
 ```
 
 ### Download test data
