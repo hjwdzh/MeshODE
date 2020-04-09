@@ -1,5 +1,7 @@
 import torch
 from torch import nn
+# from torchdiffeq import odeint
+# from torchdiffeq import odeint_adjoint as odeint
 from torchdiffeq import odeint
 
 import numpy as np
@@ -83,10 +85,43 @@ class DeformationSignNetwork(nn.Module):
         signs = self.net(dir_vector)
         return signs
     
+
+class NeuralFlowModel(nn.Module):
+    def __init__(self, dim=3, latent_size=1, f_nlayers=4, f_width=50, 
+                 s_nlayers=3, s_width=20):
+        super(NeuralFlowModel, self).__init__()
+        self.flow_net = DeformationFlowNetwork(dim=dim, latent_size=latent_size, 
+                                               nlayers=f_nlayers, width=f_width)
+        self.sign_net = DeformationSignNetwork(latent_size=latent_size, 
+                                               nlayers=s_nlayers, width=s_width)
+        self.latent_source = None
+        self.latent_target = None
+        self.latent_updated = False
+    
+    def update_latents(self, latent_source, latent_target):
+        self.latent_source = latent_source
+        self.latent_target = latent_target
+        self.latent_updated = True
+    
+    def forward(self, t, points):
+        """
+        Args:
+          t: float, deformation parameter between 0 and 1.
+          points: [batch, num_points, dim]
+        """
+        # reparametrize eval along latent path as a function of a single scalar t
+        if not self.latent_updated:
+            raise RuntimeError('Latent not updated. '
+                               'Use .update_latents() to update the source and target latents.')
+        flow = self.flow_net(self.latent_source + t * (self.latent_target - self.latent_source), points)
+        sign = self.sign_net(self.latent_target - self.latent_source)
+        return flow * sign
+        
+    
     
 class NeuralFlowDeformer():
     def __init__(self, dim=3, latent_size=1, f_nlayers=4, f_width=50, 
-                 s_nlayers=3, s_width=20, device='cuda'):
+                 s_nlayers=3, s_width=20, method='dopri5', device='cuda'):
         """Initialize. The parameters are the parameters for the Deformation Flow network.
         Args:
           dim: int, physical dimensions. Either 2 for 2d or 3 for 3d.
@@ -99,20 +134,17 @@ class NeuralFlowDeformer():
         """
         super(NeuralFlowDeformer, self).__init__()
         self.device = device
+        self.method = method
         self.timing = torch.from_numpy(np.array([0, 1]).astype('float32'))
         self.timing = self.timing.to(device)
 
-        self.flow_net = DeformationFlowNetwork(dim=dim, latent_size=latent_size, 
-                                               nlayers=f_nlayers, width=f_width)
-        self.sign_net = DeformationSignNetwork(latent_size=latent_size, 
-                                               nlayers=s_nlayers, width=s_width)
-        self.flow_net = self.flow_net.to(device)
-        self.sign_net = self.sign_net.to(device)
+        self.net = NeuralFlowModel(dim=dim, latent_size=latent_size, 
+                                   f_nlayers=f_nlayers, f_width=f_width,
+                                   s_nlayers=s_nlayers, s_width=s_width).to(device)
 
     @property
     def parameters(self):
-#         return list(self.flow_net.parameters()) + list(self.sign_net.parameters())
-        return self.flow_net.parameters()
+        return self.net.parameters()
 
     def forward(self, latent_source, latent_target, points):
         """Forward transformation (source -> target).
@@ -121,16 +153,12 @@ class NeuralFlowDeformer():
           latent_source: tensor of shape [batch, latent_size]
           latent_target: tensor of shape [batch, latent_size]
           points: [batch, num_points, dim]
+        Returns:
+          points_transformed: [batch, num_points, dim]
         """
-        # reparametrize eval along latent path as a function of a single scalar t
-        def odefunc(t, points):
-            flow = self.flow_net(latent_source + t * (latent_target - latent_source), points)
-            sign = self.sign_net(latent_target - latent_source)
-            return flow * sign
-        
-        y = odeint(odefunc, points, self.timing)[1]
-        del odefunc
-        return y
+        self.net.update_latents(latent_source, latent_target)
+        points_transformed = odeint(self.net, points, self.timing, method=self.method)[1]
+        return points_transformed
 
     def inverse(self, latent_source, latent_target, points):
         """Inverse transformation (target -> source).
@@ -139,5 +167,7 @@ class NeuralFlowDeformer():
           latent_source: tensor of shape [batch, latent_size]
           latent_target: tensor of shape [batch, latent_size]
           points: [batch, num_points, dim] 
+        Returns:
+          points_transformed: [batch, num_points, dim]
         """
         return self.forward(latent_target, latent_source, points)

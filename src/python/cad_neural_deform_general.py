@@ -34,13 +34,13 @@ V2, F2, E2, V2G2, GV2, GE2 = pyDeform.LoadCadMesh(reference_path)
 
 chamfer_loss = ChamferLoss(reduction='mean')
 
-deformer = NeuralFlowDeformer(s_nlayers=2, s_width=1, device=device)
+deformer = NeuralFlowDeformer(s_nlayers=2, s_width=1, method='rk4', device=device)
 
 optimizer = optim.Adam(deformer.parameters, lr=1e-3)
 GV1_origin = GV1.clone()
 GV2_origin = GV2.clone()
 
-niter = 1000
+niter = 10
 
 GV1 = GV1.unsqueeze(0).to(device)
 GV2 = GV2.unsqueeze(0).to(device)
@@ -49,8 +49,6 @@ GV2_latent = -GV1_latent.clone()
 loss_min = 1e30
 for it in range(0, niter):
     optimizer.zero_grad()
-
-    print("iter=%d" % it)
     
     GV1_deformed = deformer.forward(GV1_latent, GV2_latent, GV1)
     GV2_deformed = deformer.inverse(GV1_latent, GV2_latent, GV2)
@@ -63,16 +61,16 @@ for it in range(0, niter):
     loss.backward()
     optimizer.step()
 
-#     if it % 100 == 0 or True:
-#         print('iter=%d, loss1_forward=%.6f loss1_backward=%.6f loss2_forward=%.6f loss2_backward=%.6f'
-#             %(it, np.sqrt(loss1_forward.item() / GV1.shape[0]),
-#                 np.sqrt(loss1_backward.item() / GV2.shape[0]),
-#                 np.sqrt(loss2_forward.item() / GV2.shape[0]),
-#                 np.sqrt(loss2_backward.item() / GV1.shape[0])))
+    if it % 100 == 0 or True:
+        print('iter=%d, loss1_forward=%.6f loss1_backward=%.6f loss2_forward=%.6f loss2_backward=%.6f'
+            %(it, np.sqrt(loss1_forward.item() / GV1.shape[0]),
+                np.sqrt(loss1_backward.item() / GV2.shape[0]),
+                np.sqrt(loss2_forward.item() / GV2.shape[0]),
+                np.sqrt(loss2_backward.item() / GV1.shape[0])))
 
-#         current_loss = loss.item()
+        current_loss = loss.item()
 
-GV1_deformed = func.forward(GV1_device)
+GV1_deformed = deformer.forward(GV1_latent, GV2_latent, GV1)
 GV1_deformed = torch.from_numpy(GV1_deformed.data.cpu().numpy())
 V1_copy = V1.clone()
 #Finalize(V1_copy, F1, E1, V2G1, GV1_deformed, 1.0, param_id2)
