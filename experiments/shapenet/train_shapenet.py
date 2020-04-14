@@ -86,23 +86,24 @@ def train_or_eval(mode, args, encoder, deformer, chamfer_dist, dataloader, epoch
             loss_tar_to_src = criterion(tar_to_src_dist, torch.zeros_like(tar_to_src_dist))
 
             loss = loss_src_to_tar + loss_tar_to_src
-            loss.backward()
-
-            # gradient clipping
-            torch.nn.utils.clip_grad_value_(encoder.module.parameters(), args.clip_grad)
-            torch.nn.utils.clip_grad_value_(deformer.module.parameters(), args.clip_grad)
-
-            optimizer.step()
+            if mode == 'train': 
+                loss.backward()
+                
+                # gradient clipping
+                torch.nn.utils.clip_grad_value_(encoder.module.parameters(), args.clip_grad)
+                torch.nn.utils.clip_grad_value_(deformer.module.parameters(), args.clip_grad)
+                
+                optimizer.step()
 
             tot_loss += loss.item()
             count += source_pts.size()[0]
             if batch_idx % args.log_interval == 0:
                 # logger log
                 logger.info(
-                    "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss Sum: {:.6f}\t"
+                    "{} Epoch: {} [{}/{} ({:.0f}%)]\tLoss Sum: {:.6f}\t"
                     "Loss s2t: {:.6f}\tLoss t2s: {:.6f}\t"
                     "DataTime: {:.4f}\tComputeTime: {:.4f}".format(
-                        epoch, batch_idx * bs, len(dataloader) * bs,
+                        mode, epoch, batch_idx * bs, len(dataloader) * bs,
                         100. * batch_idx / len(dataloader), loss.item(),
                         loss_src_to_tar.item(), loss_tar_to_src.item(),
                         tic - toc, time.time() - tic))
@@ -274,7 +275,6 @@ def main():
 
     # more threads don't seem to help
     chamfer_dist = ChamferDistKDTree(reduction='mean', njobs=1)
-    chamfer_dist = nn.DataParallel(chamfer_dist)
     chamfer_dist.to(device)
     encoder = nn.DataParallel(encoder)
     encoder.to(device)
@@ -292,8 +292,8 @@ def main():
 
     # training loop
     for epoch in range(start_ep + 1, args.epochs + 1):
-        loss_train = train_or_eval("train", args, encoder, deformer, chamfer_dist, train_loader, 
-                                   epoch, global_step, device, logger, writer, optimizer, None)
+#         loss_train = train_or_eval("train", args, encoder, deformer, chamfer_dist, train_loader, 
+#                                    epoch, global_step, device, logger, writer, optimizer, None)
         loss_eval = train_or_eval("eval", args, encoder, deformer, chamfer_dist, eval_loader, 
                                   epoch, global_step, device, logger, writer, optimizer, vis_loader)
         if args.lr_scheduler:
