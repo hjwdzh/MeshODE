@@ -66,7 +66,7 @@ class ShapeNetBase(Dataset):
         
     def __len__(self):
         nfiles = len(self.files)
-        return nfiles * (nfiles - 1)
+        return int(0.5 * nfiles * (nfiles - 1))
     
     @property
     def n_shapes(self):
@@ -114,7 +114,7 @@ class ShapeNetVertexSampler(ShapeNetBase):
           v_sample: np array of shape [nsamples, 3 or 6] for sampled points.
         """
         mesh = trimesh.load(mesh_path)
-        v = mesh.vertices
+        v = np.array(mesh.vertices)
         nv = v.shape[0]
         seq = np.random.permutation(nv)[:nsamples]
         if len(seq) < nsamples:
@@ -122,7 +122,7 @@ class ShapeNetVertexSampler(ShapeNetBase):
             seq = np.concatenate([seq, seq_repeat], axis=0)
         v_sample = v[seq]
         if normals:
-            n_sample = mesh.vertex_normals[seq]
+            n_sample = np.array(mesh.vertex_normals[seq])
             v_sample = np.concatenate([v_sample, n_sample], axis=-1)
         
         return v_sample

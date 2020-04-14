@@ -3,7 +3,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '../../src/python')
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../../src/python')
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '../src/python/layers')
 
 from shapenet_dataloader import ShapeNetVertexSampler, ShapeNetMeshLoader
@@ -15,8 +15,10 @@ from layers.deformation_layer import NeuralFlowDeformer
 import argparse
 import json
 import os
+import glob
 import numpy as np
 from collections import defaultdict
+import time
 np.set_printoptions(precision=4)
 
 import torch
@@ -30,7 +32,7 @@ from torch.utils.tensorboard import SummaryWriter
 # Various choices for losses and optimizers
 LOSSES = {
     'l1': F.l1_loss,
-    'l2': F.l2_loss,
+    'l2': F.mse_loss,
     'huber': F.smooth_l1_loss,
 }
 
@@ -57,9 +59,13 @@ def train_or_eval(mode, args, encoder, deformer, chamfer_dist, dataloader, epoch
         deformer.eval()
     tot_loss = 0
     count = 0
-    criterion = LOSSES(args.loss_type)
+    criterion = LOSSES[args.loss_type]
+    
     with torch.set_grad_enabled(mode == 'train'):
+        toc = time.time()
+        
         for batch_idx, data_tensors in enumerate(dataloader):
+            tic = time.time()
             # send tensors to device
             data_tensors = [t.to(device) for t in data_tensors]
             source_pts, target_pts = data_tensors
@@ -76,10 +82,10 @@ def train_or_eval(mode, args, encoder, deformer, chamfer_dist, dataloader, epoch
             _, _, src_to_tar_dist = chamfer_dist(src_to_tar, target_pts[..., :3])
             _, _, tar_to_src_dist = chamfer_dist(tar_to_src, source_pts[..., :3])
 
-            src_to_tar_loss = criterion(src_to_tar_dist, torch.zeros_like(src_to_tar_dist))
-            tar_to_src_loss = criterion(tar_to_src_dist, torch.zeros_like(tar_to_src_dist))
+            loss_src_to_tar = criterion(src_to_tar_dist, torch.zeros_like(src_to_tar_dist))
+            loss_tar_to_src = criterion(tar_to_src_dist, torch.zeros_like(tar_to_src_dist))
 
-            loss = src_to_tar_loss + tar_to_src_loss
+            loss = loss_src_to_tar + loss_tar_to_src
             loss.backward()
 
             # gradient clipping
@@ -94,16 +100,19 @@ def train_or_eval(mode, args, encoder, deformer, chamfer_dist, dataloader, epoch
                 # logger log
                 logger.info(
                     "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss Sum: {:.6f}\t"
-                    "Loss s2t: {:.6f}\tLoss t2s: {:.6f}".format(
+                    "Loss s2t: {:.6f}\tLoss t2s: {:.6f}\t"
+                    "DataTime: {:.4f}\tComputeTime: {:.4f}".format(
                         epoch, batch_idx * bs, len(dataloader) * bs,
                         100. * batch_idx / len(dataloader), loss.item(),
-                        src_to_tar_loss.item(), tar_to_src_loss.item()))
+                        loss_src_to_tar.item(), loss_tar_to_src.item(),
+                        tic - toc, time.time() - tic))
                 # tensorboard log
                 writer.add_scalar(f'{mode}/loss_sum', loss, global_step=int(global_step))
                 writer.add_scalar(f'{mode}/loss_s2t', loss_src_to_tar, global_step=int(global_step))
                 writer.add_scalar(f'{mode}/loss_t2s', loss_tar_to_src, global_step=int(global_step))
 
             global_step += 1
+            toc = time.time()
     tot_loss /= count
     
     # visualize a few deformations in tensorboard
@@ -153,7 +162,7 @@ def get_args():
     parser.add_argument("--pseudo_train_epoch_size", type=int, default=2048, metavar="N",
                         help="number of samples in an pseudo-epoch. (default: 2048)")
     parser.add_argument("--pseudo_eval_epoch_size", type=int, default=128, metavar="N",
-                        help="number of samples in an pseudo-epoch. (default: 2048)")
+                        help="number of samples in an pseudo-epoch. (default: 128)")
     parser.add_argument("--lr", type=float, default=1e-3, metavar="R",
                         help="learning rate (default: 0.001)")
     parser.add_argument("--no_cuda", action="store_true", default=False,
@@ -174,12 +183,10 @@ def get_args():
     parser.add_argument("-n", "--nsamples", default=2048, type=int,
                         help="number of sample points to draw per shape.")
     parser.add_argument("--lat_dims", default=64, type=int, help="number of latent dimensions.")
-    parser.add_argument("--encoder_nf", default=16, type=int,
+    parser.add_argument("--encoder_nf", default=32, type=int,
                         help="number of base number of feature layers in encoder (pointnet).")
-    parser.add_argument("--deformer_nf", default=256, type=int,
+    parser.add_argument("--deformer_nf", default=64, type=int,
                         help="number of base number of feature layers in deformer (imnet).")
-    parser.add_argument("--pseudo_batch_size", default=1024, type=int,
-                        help="size of pseudo batch during eval.")
     parser.add_argument("--lr_scheduler", dest='lr_scheduler', action='store_true')
     parser.add_argument("--no_lr_scheduler", dest='lr_scheduler', action='store_false')
     parser.set_defaults(lr_scheduler=True)
@@ -199,15 +206,14 @@ def get_args():
 def main():
     args = get_args()
 
-    use_cuda = (not args.no_cuda) and torch.cuda.is_available()
-    kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
-    device = torch.device("cuda" if use_cuda else "cpu")
     # adjust batch size based on the number of gpus available
     args.batch_size = int(torch.cuda.device_count()) * args.batch_size_per_gpu
-
+    use_cuda = (not args.no_cuda) and torch.cuda.is_available()
+    kwargs = {'num_workers': min(12, args.batch_size), 'pin_memory': True} if use_cuda else {}
+    device = torch.device("cuda" if use_cuda else "cpu")
+    
     # log and create snapshots
-    os.makedirs(args.log_dir, exist_ok=True)
-    filenames_to_snapshot = glob("*.py") + glob("*.sh") + glob("layers/*.py")
+    filenames_to_snapshot = glob.glob("*.py") + glob.glob("*.sh") + glob.glob("layers/*.py")
     utils.snapshot_files(filenames_to_snapshot, args.log_dir)
     logger = utils.get_logger(log_dir=args.log_dir)
     with open(os.path.join(args.log_dir, "params.json"), 'w') as fh:
@@ -227,10 +233,10 @@ def main():
     evalset = ShapeNetVertexSampler(data_root=args.data_root, split="val", category="chair",
                                     nsamples=5000, normals=args.normals)
 
-    train_sampler = RandomSampler(trainset, replacement=True, num_samples=args.pseudo_epoch_size)
-    eval_sampler = RandomSampler(evalset, replacement=True, num_samples=args.num_log_images)
+    train_sampler = RandomSampler(trainset, replacement=True, num_samples=args.pseudo_train_epoch_size)
+    eval_sampler = RandomSampler(evalset, replacement=True, num_samples=args.pseudo_eval_epoch_size)
 
-    train_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, drop_last=True,
+    train_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=False, drop_last=True,
                               sampler=train_sampler, **kwargs)
     eval_loader = DataLoader(evalset, batch_size=args.batch_size, shuffle=False, drop_last=False,
                              sampler=eval_sampler, **kwargs)
@@ -243,7 +249,7 @@ def main():
 
     # setup model
     in_feat = 6 if args.normals else 3
-    encoder = PointNetEncoder(nf=16, in_features=in_feat, out_features=latent_size).to(device)
+    encoder = PointNetEncoder(nf=16, in_features=in_feat, out_features=args.lat_dims).to(device)
     deformer = NeuralFlowDeformer(latent_size=args.lat_dims, f_width=args.deformer_nf, s_nlayers=3, 
                                   s_width=16, method='rk4', nonlinearity='leakyrelu', arch='imnet')
     all_model_params = list(deformer.parameters())+list(encoder.parameters())

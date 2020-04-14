@@ -335,12 +335,10 @@ class NeuralFlowDeformer(nn.Module):
           arch: str, architecture, choice of 'imnet' / 'vanilla'
         """
         super(NeuralFlowDeformer, self).__init__()
-        self.device = device
         self.method = method
         self.conformal = conformal
         self.arch = arch
         self.timing = torch.from_numpy(np.array([0, 1]).astype('float32'))
-        self.timing = self.timing.to(device)
 
         self.net = NeuralFlowModel(dim=dim, latent_size=latent_size, 
                                    f_nlayers=f_nlayers, f_width=f_width,

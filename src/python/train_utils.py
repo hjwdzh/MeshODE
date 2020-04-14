@@ -36,13 +36,13 @@ def snapshot_files(list_of_filenames, log_dir):
         log_dir: str, log directory to save code snapshots.
     """
     snap_dir = os.path.join(log_dir, "snapshots")
-    os.makedirs(snap_dir)
+    os.makedirs(snap_dir, exist_ok=True)
     for filename in list_of_filenames:
         if filename == os.path.basename(filename):
             shutil.copy2(filename, os.path.join(snap_dir, filename))
         else:
             subdir = os.path.dirname(filename)
-            os.makedirs(subdir)
+            os.makedirs(subdir, exist_ok=True)
             shutil.copy2(filename, os.path.join(snap_dir, filename))
 
 
