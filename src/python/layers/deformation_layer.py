@@ -155,7 +155,6 @@ class DeformationFlowNetwork(nn.Module):
         for m in self.net.modules():
             if isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, mean=0, std=1e-1)
-#                 nn.init.constant_(m.bias, val=0)
                 nn.init.normal_(m.bias, mean=0, std=1e-1)
 
     def forward(self, latent_vector, points):
@@ -321,10 +320,10 @@ class NeuralFlowModel(nn.Module):
         
     
     
-class NeuralFlowDeformer():
+class NeuralFlowDeformer(nn.Module):
     def __init__(self, dim=3, latent_size=1, f_nlayers=4, f_width=50, 
                  s_nlayers=3, s_width=20, method='rk4', nonlinearity='leakyrelu', 
-                 arch='imnet', conformal=False, device='cuda'):
+                 arch='imnet', conformal=False):
         """Initialize. The parameters are the parameters for the Deformation Flow network.
         Args:
           dim: int, physical dimensions. Either 2 for 2d or 3 for 3d.
@@ -334,7 +333,6 @@ class NeuralFlowDeformer():
           s_nlayers: int, number of neural network layers for sign network. >= 2.
           s_width: int, number of neurons per hidden layer for sign network. >= 1.
           arch: str, architecture, choice of 'imnet' / 'vanilla'
-          device: str, device to evaluate on.
         """
         super(NeuralFlowDeformer, self).__init__()
         self.device = device
@@ -348,34 +346,19 @@ class NeuralFlowDeformer():
                                    f_nlayers=f_nlayers, f_width=f_width,
                                    s_nlayers=s_nlayers, s_width=s_width,
                                    arch=arch, conformal=conformal, 
-                                   nonlinearity=nonlinearity).to(device)
+                                   nonlinearity=nonlinearity)
 
-    @property
-    def parameters(self):
-        return self.net.parameters()
-
-    def forward(self, latent_source, latent_target, points):
+    def forward(self, points, latent_source, latent_target):
         """Forward transformation (source -> target).
         
         Args:
+          points: [batch, num_points, dim]
           latent_source: tensor of shape [batch, latent_size]
           latent_target: tensor of shape [batch, latent_size]
-          points: [batch, num_points, dim]
+
         Returns:
           points_transformed: [batch, num_points, dim]
         """
         self.net.update_latents(latent_source, latent_target)
         points_transformed = odeint(self.net, points, self.timing, method=self.method)[1]
         return points_transformed
-
-    def inverse(self, latent_source, latent_target, points):
-        """Inverse transformation (target -> source).
-        
-        Args:
-          latent_source: tensor of shape [batch, latent_size]
-          latent_target: tensor of shape [batch, latent_size]
-          points: [batch, num_points, dim] 
-        Returns:
-          points_transformed: [batch, num_points, dim]
-        """
-        return self.forward(latent_target, latent_source, points)

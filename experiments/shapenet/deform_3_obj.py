@@ -7,7 +7,7 @@ from torch import nn
 import torch.optim as optim
 from torch.autograd import Function
 
-from layers.chamfer_layer import ChamferDist, ChamferDistKDTree
+from layers.chamfer_layer import ChamferDistKDTree
 from layers.deformation_layer import NeuralFlowDeformer
 import pyDeform
 from layers.graph_loss2_layer import GraphLoss2Layer, Finalize
@@ -32,7 +32,7 @@ criterion = torch.nn.MSELoss()
 latent_size = 3
 
 deformer = NeuralFlowDeformer(latent_size=latent_size, f_nlayers=6, f_width=100, s_nlayers=2, s_width=5, method='rk4', nonlinearity='leakyrelu', arch='imnet', device=device)
-encoder = PointNetEncoder(nf=16, output_features=latent_size).to(device)
+encoder = PointNetEncoder(nf=16, out_features=latent_size).to(device)
 
 optimizer = optim.Adam(list(deformer.parameters)+list(encoder.parameters()), lr=1e-3)
 
@@ -42,11 +42,6 @@ npts = 5000
 V1 = torch.tensor(m1.vertices.astype(np.float32)).to(device)  # .unsqueeze(0)
 V2 = torch.tensor(m2.vertices.astype(np.float32)).to(device)  # .unsqueeze(0)
 V3 = torch.tensor(m3.vertices.astype(np.float32)).to(device)  # .unsqueeze(0)
-# V1_latent = torch.tensor(np.array([[1., 0., 0.]], dtype=np.float32)).to(device)
-# V2_latent = torch.tensor(np.array([[0., 1., 0.]], dtype=np.float32)).to(device)
-# V3_latent = torch.tensor(np.array([[0., 0., 1.]], dtype=np.float32)).to(device)
-# batch_latent_src = torch.cat([V1_latent, V3_latent, V1_latent, V2_latent, V2_latent, V3_latent], dim=0)
-# batch_latent_tar = torch.cat([V3_latent, V1_latent, V2_latent, V1_latent, V3_latent, V2_latent], dim=0)
 
 loss_min = 1e30
 tic = time()
@@ -68,7 +63,7 @@ for it in range(0, niter):
     batch_latent_src = encoder(V_src)
     batch_latent_tar = encoder(V_tar)
     
-    V_deform = deformer.forward(batch_latent_src, batch_latent_tar, V_src)
+    V_deform = deformer(V_src, batch_latent_src, batch_latent_tar)
     
 
     _, _, dist = chamfer_dist(V_deform, V_tar)
@@ -91,12 +86,12 @@ with torch.no_grad():
     V2_latent = encoder(V2.unsqueeze(0))
     V3_latent = encoder(V3.unsqueeze(0))
 
-    V1_2 = deformer.forward(V1_latent, V2_latent, V1.unsqueeze(0)).detach().cpu().numpy()[0]
-    V2_1 = deformer.forward(V2_latent, V1_latent, V2.unsqueeze(0)).detach().cpu().numpy()[0]
-    V1_3 = deformer.forward(V1_latent, V3_latent, V1.unsqueeze(0)).detach().cpu().numpy()[0]
-    V3_1 = deformer.forward(V3_latent, V1_latent, V3.unsqueeze(0)).detach().cpu().numpy()[0]
-    V2_3 = deformer.forward(V2_latent, V3_latent, V2.unsqueeze(0)).detach().cpu().numpy()[0]
-    V3_2 = deformer.forward(V3_latent, V2_latent, V3.unsqueeze(0)).detach().cpu().numpy()[0]
+    V1_2 = deformer(V1.unsqueeze(0), V1_latent, V2_latent).detach().cpu().numpy()[0]
+    V2_1 = deformer(V2.unsqueeze(0), V2_latent, V1_latent).detach().cpu().numpy()[0]
+    V1_3 = deformer(V1.unsqueeze(0), V1_latent, V3_latent).detach().cpu().numpy()[0]
+    V3_1 = deformer(V3.unsqueeze(0), V3_latent, V1_latent).detach().cpu().numpy()[0]
+    V2_3 = deformer(V2.unsqueeze(0), V2_latent, V3_latent).detach().cpu().numpy()[0]
+    V3_2 = deformer(V3.unsqueeze(0), V3_latent, V2_latent).detach().cpu().numpy()[0]
 trimesh.Trimesh(V1_2, m1.faces).export('/home/maxjiang/codes/ShapeDeform/data/output_1_2.obj')
 trimesh.Trimesh(V2_1, m2.faces).export('/home/maxjiang/codes/ShapeDeform/data/output_2_1.obj')
 trimesh.Trimesh(V1_3, m1.faces).export('/home/maxjiang/codes/ShapeDeform/data/output_1_3.obj')

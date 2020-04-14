@@ -5,17 +5,22 @@ from scipy.spatial import cKDTree
 import multiprocessing
 
 
+REDUCTIONS = {
+    "mean": torch.mean,
+    "max": torch.max,
+    "min": torch.min,
+    "sum": torch.sum,
+}
+
+
 class ChamferDist(nn.Module):
     """Compute chamfer distance on GPU using O(n^2) dense distance matrix."""
     def __init__(self, reduction='mean'):
         super(ChamferLoss, self).__init__()
-        assert(reduction in ['mean', 'sum', 'none'])
-        if reduction == 'mean':
-            self.reduce = lambda x: torch.mean(x) 
-        elif reduction == 'sum':
-            self.reduce = lambda x: torch.sum(x)
-        else:
-            self.reduce = lambda x: x
+        if not (reduction in list(REDUCTIONS.keys())):
+            raise ValueError(f'reduction method ({reduction}) not in list of '
+                             f'accepted values: {list(REDUCTIONS.keys())}')
+        self.reduce = lambda x: REDUCTIONS[reduction](x, axis=-1)
 
     def forward(self, tar, src):
         """
@@ -83,11 +88,7 @@ class ChamferDistKDTree(nn.Module):
         super(ChamferDistKDTree, self).__init__()
         self.njobs = njobs
         
-        assert(reduction in ['mean', 'sum'])
-        if reduction == 'mean':
-            self.reduce = lambda x: torch.mean(x, axis=-1) 
-        else:  # sum
-            self.reduce = lambda x: torch.sum(x, axis=-1)
+        self.set_reduction_method(reduction)
         if self.njobs != 1:
             self.p = multiprocessing.Pool(njobs)
     
@@ -101,10 +102,7 @@ class ChamferDistKDTree(nn.Module):
         """
         b = src.shape[0]
         if njobs != 1:
-#             raise NotImplementedError("Parallel implementation is still under development. "
-#                                       "Use njobs = 1 for serial execution instead.")
             src_tar_pairs = tuple(zip(src, tar, range(b)))
-#             p = multiprocessing.Pool(njobs)
             result = self.p.map(find_nn_id_parallel, src_tar_pairs)
             seq_arr = np.array([r[0] for r in result])
             batch_nn_idx = np.stack([r[1] for r in result], axis=0)
@@ -113,6 +111,13 @@ class ChamferDistKDTree(nn.Module):
             batch_nn_idx = np.stack([find_nn_id((src[i], tar[i])) for i in range(b)], axis=0)
         
         return batch_nn_idx
+    
+    def set_reduction_method(self, reduction):
+        """Set reduction method."""
+        if not (reduction in list(REDUCTIONS.keys())):
+            raise ValueError(f'reduction method ({reduction}) not in list of '
+                             f'accepted values: {list(REDUCTIONS.keys())}')
+        self.reduce = lambda x: REDUCTIONS[reduction](x, axis=-1)
         
     def forward(self, tar, src):
         """

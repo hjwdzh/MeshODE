@@ -92,10 +92,10 @@ class STNkd(nn.Module):
         return x
 
 class PointNetfeat(nn.Module):
-    def __init__(self, nf=64, global_feat=True, feature_transform=False):
+    def __init__(self, in_features=3, nf=64, global_feat=True, feature_transform=False):
         super(PointNetfeat, self).__init__()
         self.stn = STN3d()
-        self.conv1 = torch.nn.Conv1d(3, nf, 1)
+        self.conv1 = torch.nn.Conv1d(in_features, nf, 1)
         self.conv2 = torch.nn.Conv1d(nf, nf*2, 1)
         self.conv3 = torch.nn.Conv1d(nf*2, nf*16, 1)
         self.bn1 = nn.BatchNorm1d(nf)
@@ -184,18 +184,20 @@ class PointNetDenseCls(nn.Module):
     
 
 class PointNetEncoder(nn.Module):
-    def __init__(self, nf=64, output_features=8, feature_transform=False):
+    def __init__(self, nf=64, in_features=3, out_features=8, feature_transform=False):
         super(PointNetEncoder, self).__init__()
         self.feature_transform = feature_transform
-        self.feat = PointNetfeat(global_feat=True, nf=nf, feature_transform=feature_transform)
+        self.feat = PointNetfeat(global_feat=True, in_features=in_features, nf=nf, 
+                                 feature_transform=feature_transform)
         self.fc1 = nn.Linear(nf*16, nf*8)
         self.fc2 = nn.Linear(nf*8, nf*4)
-        self.fc3 = nn.Linear(nf*4, output_features)
+        self.fc3 = nn.Linear(nf*4, out_features)
         self.dropout = nn.Dropout(p=0.3)
         self.bn1 = nn.BatchNorm1d(nf*8)
         self.bn2 = nn.BatchNorm1d(nf*4)
         self.relu = nn.ReLU()
-        self.output_features = output_features
+        self.in_features = in_features
+        self.out_features = out_features
         self.nf = nf
 
     def forward(self, x):
