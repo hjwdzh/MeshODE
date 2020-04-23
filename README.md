@@ -70,7 +70,8 @@ We provide different binaries for shape deformation with different assumptions.
 
 The way to run them is by
 ```
-./rigid_deform source.obj reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0].
+./rigid_deform ../data/source.obj ../data/reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0].
+./cad_deform ../data/cad.obj ../data/reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0].
 ```
 
 ### Run Pytorch optimizer
