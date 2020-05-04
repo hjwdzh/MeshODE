@@ -8,7 +8,7 @@ class RigidLossFunction(Function):
 	@staticmethod
 	def forward(ctx, src_V, src_F, param_id):
 		pid = param_id.tolist()
-		lossD = pyDeform.DistanceFieldLoss_forward(src_V, pid) * 0.5
+		lossD = pyDeform.DistanceFieldLoss_forward(src_V, pid) * 0.5 
 		lossR = pyDeform.RigidEdgeLoss_forward(src_V, src_F, pid) * 0.5
 
 		variables = [src_V, src_F, param_id]

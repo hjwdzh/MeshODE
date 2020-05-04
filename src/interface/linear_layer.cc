@@ -70,7 +70,7 @@ void SolveLinear(
 			references, graphV, rigidity);
 	else
 		LinearEstimationWithRot((double*)V.data(), (int*)F.data(),
-			(double*)graphV.data(), V.size(), F.size());
+			(double*)graphV.data(), V.size(), F.size(), rigidity);
 	for (int i = 0; i < v_size; ++i) {
 		for (int j = 0; j < 3; ++j) {
 			dataV[i * 3 + j] = V[i][j];

@@ -8,7 +8,7 @@ class ODEFunc(nn.Module):
     def __init__(self):
         super(ODEFunc, self).__init__()
         m = 50
-        nlin = nn.ReLU()
+        nlin = nn.LeakyReLu()
         self.net = nn.Sequential(
             nn.Linear(4, m),
             nlin,
@@ -61,4 +61,4 @@ class NeuralODE():
 
     def integrate(self, u, t1, t2, device):
         new_time = torch.from_numpy(np.array([t1,t2]).astype('float32')).to(device)
-        return odeint(self.func, u, new_time)[1]
+        return odeint(self.func, u, new_time, method="rk4", rtol=1e-4, atol=1e-4)[1]

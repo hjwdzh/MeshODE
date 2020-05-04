@@ -10,7 +10,7 @@ from torch.autograd import Function
 from layers.graph_loss2_layer import GraphLoss2Layer, Finalize
 from layers.reverse_loss_layer import ReverseLossLayer
 from layers.maf import MAF
-from layers.neuralode import NeuralODE
+from layers.neuralode_fast import NeuralODE
 import pyDeform
 
 import torch
@@ -76,6 +76,8 @@ for it in range(0, niter):
 
 		current_loss = loss.item()
 
+torch.save({'func':func, 'optim':optimizer}, sys.argv[3] + '.ckpt')
+
 GV1_deformed = func.forward(GV1_device)
 GV1_deformed = torch.from_numpy(GV1_deformed.data.cpu().numpy())
 V1_copy = V1.clone()
@@ -84,7 +86,8 @@ V1_copy = V1.clone()
 pyDeform.NormalizeByTemplate(V1_copy, param_id1.tolist())
 V1_origin = V1_copy.clone()
 
-V1_copy = V1_copy.to(device)
+#V1_copy = V1_copy.to(device)
+func.func = func.func.cpu()
 V1_copy = func.forward(V1_copy)
 V1_copy = torch.from_numpy(V1_copy.data.cpu().numpy())
 

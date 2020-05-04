@@ -1,6 +1,7 @@
 import sys
 import os
 import numpy as np
+from time import time
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/layers')
 
@@ -30,7 +31,6 @@ graph_V = nn.Parameter(graph_V)
 optimizer = optim.Adam([graph_V], lr=1e-3)
 
 pyDeform.NormalizeByTemplate(graph_V_tar, param_id.tolist())
-
 loss_src2tar, loss_tar2src = None, None
 niter = 10000
 prev_loss_src, prev_loss_tar = 1e30, 1e30

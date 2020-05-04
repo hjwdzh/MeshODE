@@ -112,7 +112,7 @@ void LinearEstimation(std::vector<Vector3>& V,
 }
 
 void LinearEstimationWithRot(double* V, int* F, double* TV,
-	int num_V, int num_F) {
+	int num_V, int num_F, double rigidity) {
 	std::vector<int> E(num_F * 6);
 	int num_E = 0;
 	for (int i = 0; i < num_F; ++i) {
@@ -195,7 +195,7 @@ void LinearEstimationWithRot(double* V, int* F, double* TV,
 			double* V0 = V + v0 * 3;
 			double* V1 = V + v1 * 3;
 			Eigen::Vector3d off1(V1[0] - V0[0], V1[1] - V0[1], V1[2] - V0[2]);
-			double reg = regulation * 2e-2 / off1.norm();
+			double reg = regulation * 2e-2 / off1.norm() * rigidity;
 			off1 = scales[v0] * rotations[v0] * off1;
 			add_entry_A(v0, v0, reg);
 			add_entry_A(v0, v1, -reg);

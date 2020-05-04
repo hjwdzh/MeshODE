@@ -10,7 +10,7 @@ from torch.autograd import Function
 from layers.graph_loss2_layer import GraphLoss2Layer, Finalize
 from layers.reverse_loss_layer import ReverseLossLayer
 from layers.maf import MAF
-from layers.neuralode import NeuralODE
+from layers.neuralode_fast import NeuralODE
 import pyDeform
 
 import torch
@@ -21,9 +21,10 @@ source_path = sys.argv[1]
 reference_path = sys.argv[2]
 output_path = sys.argv[3]
 rigidity = float(sys.argv[4])
+resume_model = sys.argv[5]
 
-if len(sys.argv) > 5:
-	device = torch.device(sys.argv[5])
+if len(sys.argv) > 6:
+	device = torch.device(sys.argv[6])
 else:
 	device = torch.device('cpu')
 
@@ -40,8 +41,8 @@ reverse_loss = ReverseLossLayer()
 #func = MAF(5, 3, 256, 1, None, 'relu', 'sequential', batch_norm=False)
 #func = func.to(device)
 
-if os.path.exists('models/func.ckpt'):
-	checkpoint = torch.load('models/func.ckpt')
+if os.path.exists(resume_model):
+	checkpoint = torch.load(resume_model,map_location=device)
 
 	optimizer = checkpoint['optim']
 	func = checkpoint['func']
@@ -84,7 +85,7 @@ for it in range(0, niter):
 
 		current_loss = loss.item()
 
-torch.save({'func':func, 'optim':optimizer}, 'models/func.ckpt')
+#torch.save({'func':func, 'optim':optimizer}, 'models/func.ckpt')
 GV1_deformed = func.forward(GV1_device)
 GV1_deformed = torch.from_numpy(GV1_deformed.data.cpu().numpy())
 V1_copy = V1.clone()
@@ -93,9 +94,9 @@ pyDeform.NormalizeByTemplate(V1_copy, param_id1.tolist())
 V1_origin = V1_copy.clone()
 
 
+if not os.path.exists(output_path):
+	os.mkdir(output_path)
 for i in range(26):
-	if i != 25:
-		continue
 	V1_deform = V1_origin.clone()
 	V1_copy = V1_origin.clone().to(device)
 	if i != 0:
@@ -113,9 +114,8 @@ for i in range(26):
 
 	pyDeform.SolveLinear(V1_deform, F1, E1, src_to_src, V1_copy, 1, 1)
 	pyDeform.DenormalizeByTemplate(V1_deform, param_id2.tolist())
-	pyDeform.SaveMesh('result/src-%02d.obj'%(i), V1_deform, F1)
+	pyDeform.SaveMesh('%s/src-%02d.obj'%(output_path,i), V1_deform, F1)
 
-exit(0)
 V2_copy = V2.clone()
 pyDeform.NormalizeByTemplate(V2_copy, param_id2.tolist())
 V2_origin = V2_copy.clone()
@@ -131,4 +131,4 @@ for i in range(26):
 
 	pyDeform.SolveLinear(V2_deform, F2, E2, src_to_src, V2_copy, 1, 1)
 	pyDeform.DenormalizeByTemplate(V2_deform, param_id2.tolist())
-	pyDeform.SaveMesh('result/tar-%02d.obj'%(i), V2_deform, F2)
+	pyDeform.SaveMesh('%s/tar-%02d.obj'%(output_path,i), V2_deform, F2)
