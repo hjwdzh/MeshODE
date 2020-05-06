@@ -8,7 +8,7 @@ class ODEFunc(nn.Module):
     def __init__(self):
         super(ODEFunc, self).__init__()
         m = 50
-        nlin = nn.LeakyReLu()
+        nlin = nn.LeakyReLU()
         self.net = nn.Sequential(
             nn.Linear(4, m),
             nlin,
