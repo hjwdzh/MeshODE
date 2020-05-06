@@ -53,11 +53,11 @@ class NeuralODE():
         return self.func.parameters()
 
     def forward(self, u):
-        y = odeint(self.func, u, self.timing)[1]
+        y = odeint(self.func, u, self.timing, method="rk4", rtol=1e-4, atol=1e-4)[1]
         return y
 
     def inverse(self, u):
-        return odeint(self.func, u, self.timing_inv)[1]
+        return odeint(self.func, u, self.timing_inv, method="rk4", rtol=1e-4, atol=1e-4)[1]
 
     def integrate(self, u, t1, t2, device):
         new_time = torch.from_numpy(np.array([t1,t2]).astype('float32')).to(device)
