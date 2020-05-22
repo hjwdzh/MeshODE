@@ -13,10 +13,20 @@ from layers.graph_loss_layer import GraphLossLayer, Finalize
 from layers.reverse_loss_layer import ReverseLossLayer
 import pyDeform
 
-source_path = sys.argv[1]
-reference_path = sys.argv[2]
-output_path = sys.argv[3]
-rigidity = float(sys.argv[4])
+import argparse
+
+parser = argparse.ArgumentParser(description='Rigid Deformation.')
+parser.add_argument('--source', default='../data/cad-source.obj')
+parser.add_argument('--target', default='../data/cad-target.obj')
+parser.add_argument('--output', default='./cad-output.obj')
+parser.add_argument('--rigidity', default='1')
+
+args = parser.parse_args()
+
+source_path = args.source
+reference_path = args.target
+output_path = args.output
+rigidity = float(args.rigidity)
 src_V, src_F, src_E, src_to_graph, graph_V, graph_E\
 	= pyDeform.LoadCadMesh(source_path)
 

@@ -10,9 +10,18 @@ from torch.autograd import Function
 from layers.rigid_loss_layer import RigidLossLayer, Finalize
 import pyDeform
 
-source_path = sys.argv[1]
-reference_path = sys.argv[2]
-output_path = sys.argv[3]
+import argparse
+
+parser = argparse.ArgumentParser(description='Rigid Deformation.')
+parser.add_argument('--source', default='../data/source.obj')
+parser.add_argument('--target', default='../data/target.obj')
+parser.add_argument('--output', default='./output.obj')
+
+args = parser.parse_args()
+
+source_path = args.source
+reference_path = args.target
+output_path = args.output
 src_V, src_F = pyDeform.LoadMesh(source_path)
 tar_V, tar_F = pyDeform.LoadMesh(reference_path)
 

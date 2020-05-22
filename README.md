@@ -1,7 +1,7 @@
-# Deep Shape Deformation.
-Deform Shape A to fit shape B.
+# MeshODE: A Robust and Scalable Framework for Mesh Deformation
+Pairwise shape deformation.
 
-![Plane Fitting Results](https://github.com/hjwdzh/ShapeDeform/raw/master/res/teaser.png)
+![Plane Fitting Results](https://github.com/hjwdzh/ShapeDeform/raw/master/res/teaser.jpg)
 
 ### Dependencies
 1. libIGL
@@ -49,7 +49,7 @@ import torch
 import pyDeform
 ```
 
-### Download test data
+### Download demo or massive data
 ```
 cd data
 sh download.sh
@@ -70,16 +70,28 @@ We provide different binaries for shape deformation with different assumptions.
 
 The way to run them is by
 ```
-./rigid_deform ../data/source.obj ../data/reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0].
-./cad_deform ../data/cad.obj ../data/reference.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0].
+./rigid_deform ../data/source.obj ../data/target.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0].
+./cad_deform ../data/cad.obj ../data/target.obj output.obj [GRID_RESOLUTION=64] [MESH_RESOLUTION=5000] [lambda=1] [symmetry=0].
 ```
 
 ### Run Pytorch optimizer
 ```
 cd build
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-python ../src/python/rigid_deform.py ../data/source.obj ../data/reference.obj ./rigid_output.obj
-python ../src/python/cad_deform2.py ../data/cad.obj ../data/reference.obj ./cad_output.obj 1
-python ../src/python/cad_neural_deform2.py ../data/cad.obj ../data/reference.obj ./cad_output.obj 0 cuda
 ```
-
+1. For watertight mesh deformation, try
+```
+python ../src/python/rigid_deform.py --source ../data/source.obj --target ../data/target.obj --output ./rigid_output.obj
+```
+2. For general CAD model deformation using traditional method
+```
+python ../src/python/cad_deform2.py --source ../data/cad-source.obj --target ../data/cad-target.obj --output ./cad_output.obj --rigidity 1
+```
+3. For NeuarlODE-based deformation, try
+```
+python ../src/python/cad_neural_deform2.py --source ../data/cad-source.obj --target ../data/cad-target.obj --output ./cad_output.obj --save_path ./cad_output.ckpt --rigidity 0.1 --device cpu [cuda if possible for faster optimization]
+```
+4. To generate intermediate steps during deformation with NeuralODE (assuming you have previous script done), try
+```
+python3 ../src/python/cad_neural_animate.py --source ../data/cad-source.obj --target ../data/cad-target.obj --output_folder ./animation --rigidity 0.1 --resume_path ./cad_output.ckpt --device cpu [cuda if possible for faster optimization]
+```

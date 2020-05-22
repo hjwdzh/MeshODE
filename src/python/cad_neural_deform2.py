@@ -17,15 +17,24 @@ import torch
 import numpy as np
 from time import time
 
-source_path = sys.argv[1]
-reference_path = sys.argv[2]
-output_path = sys.argv[3]
-rigidity = float(sys.argv[4])
+import argparse
 
-if len(sys.argv) > 5:
-	device = torch.device(sys.argv[5])
-else:
-	device = torch.device('cpu')
+parser = argparse.ArgumentParser(description='Rigid Deformation.')
+parser.add_argument('--source', default='../data/cad-source.obj')
+parser.add_argument('--target', default='../data/cad-target.obj')
+parser.add_argument('--output', default='./cad-output.obj')
+parser.add_argument('--rigidity', default='0.1')
+parser.add_argument('--device', default='cuda')
+parser.add_argument('--save_path', default='./cad-output.ckpt')
+
+args = parser.parse_args()
+
+source_path = args.source
+reference_path = args.target
+output_path = args.output
+rigidity = float(args.rigidity)
+save_path = args.save_path
+device = torch.device(args.device)
 
 
 V1, F1, E1, V2G1, GV1, GE1 = pyDeform.LoadCadMesh(source_path)
@@ -76,7 +85,8 @@ for it in range(0, niter):
 
 		current_loss = loss.item()
 
-torch.save({'func':func, 'optim':optimizer}, sys.argv[3] + '.ckpt')
+if save_path != '':
+	torch.save({'func':func, 'optim':optimizer}, save_path)
 
 GV1_deformed = func.forward(GV1_device)
 GV1_deformed = torch.from_numpy(GV1_deformed.data.cpu().numpy())

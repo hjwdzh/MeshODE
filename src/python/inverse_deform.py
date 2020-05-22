@@ -44,4 +44,3 @@ for it in range(0, niter):
 
 Finalize(src_V, param_id)
 pyDeform.SaveMesh(output_path, src_V, src_F)
-#/orion/downloads/deformation_aware_embedding/scan2cad/version3/03001627/7729a6ad96985f4ed1ccbd5d84e5bc86_scan_0021.obj

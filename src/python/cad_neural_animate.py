@@ -17,16 +17,24 @@ import torch
 import numpy as np
 from time import time
 
-source_path = sys.argv[1]
-reference_path = sys.argv[2]
-output_path = sys.argv[3]
-rigidity = float(sys.argv[4])
-resume_model = sys.argv[5]
+import argparse
 
-if len(sys.argv) > 6:
-	device = torch.device(sys.argv[6])
-else:
-	device = torch.device('cpu')
+parser = argparse.ArgumentParser(description='Rigid Deformation.')
+parser.add_argument('--source', default='../data/cad-source.obj')
+parser.add_argument('--target', default='../data/cad-target.obj')
+parser.add_argument('--output_folder', default='./animation')
+parser.add_argument('--rigidity', default='0.1')
+parser.add_argument('--device', default='cuda')
+parser.add_argument('--resume_path', default='./cad-output.ckpt')
+
+args = parser.parse_args()
+
+source_path = args.source
+reference_path = args.target
+output_path = args.output_folder
+rigidity = float(args.rigidity)
+resume_path = args.resume_path
+device = torch.device(args.device)
 
 
 V1, F1, E1, V2G1, GV1, GE1 = pyDeform.LoadCadMesh(source_path)
@@ -41,20 +49,21 @@ reverse_loss = ReverseLossLayer()
 #func = MAF(5, 3, 256, 1, None, 'relu', 'sequential', batch_norm=False)
 #func = func.to(device)
 
-if os.path.exists(resume_model):
-	checkpoint = torch.load(resume_model,map_location=device)
+if os.path.exists(resume_path):
+	checkpoint = torch.load(resume_path,map_location=device)
 
 	optimizer = checkpoint['optim']
 	func = checkpoint['func']
 	func.func = func.func.to(device)
+	niter = 0
 else:
 	func = NeuralODE(device)
 	optimizer = optim.Adam(func.parameters(), lr=1e-3)
+	niter = 1000
 
 GV1_origin = GV1.clone()
 GV2_origin = GV2.clone()
 
-niter = 0
 
 GV1_device = GV1.to(device)
 GV2_device = GV2.to(device)
