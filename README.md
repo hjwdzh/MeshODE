@@ -49,11 +49,13 @@ import torch
 import pyDeform
 ```
 
-### Download demo or massive data
+### Download data
+We already provide some demo shapes in the data folder. For playing with more shapes, try
 ```
 cd data
-sh download.sh
+wget -i filelist.txt
 ```
+You will get 3625 pairs of shapes.
 
 ### Run
 We provide different binaries for shape deformation with different assumptions.
@@ -93,5 +95,5 @@ python ../src/python/cad_neural_deform2.py --source ../data/cad-source.obj --tar
 ```
 4. To generate intermediate steps during deformation with NeuralODE (assuming you have previous script done), try
 ```
-python3 ../src/python/cad_neural_animate.py --source ../data/cad-source.obj --target ../data/cad-target.obj --output_folder ./animation --rigidity 0.1 --resume_path ./cad_output.ckpt --device cpu [cuda if possible for faster optimization]
+python ../src/python/cad_neural_animate.py --source ../data/cad-source.obj --target ../data/cad-target.obj --output_folder ./animation --rigidity 0.1 --resume_path ./cad_output.ckpt --device cpu [cuda if possible for faster optimization]
 ```
