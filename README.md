@@ -97,3 +97,13 @@ python ../src/python/cad_neural_deform2.py --source ../data/cad-source.obj --tar
 ```
 python ../src/python/cad_neural_animate.py --source ../data/cad-source.obj --target ../data/cad-target.obj --output_folder ./animation --rigidity 0.1 --resume_path ./cad_output.ckpt --device cpu [cuda if possible for faster optimization]
 ```
+
+## Author
+- [Jingwei Huang](mailto:jingweih@stanford.edu)
+
+&copy; 2020 Jingwei Huang All Rights Reserved
+
+**IMPORTANT**: If you use this code please cite the following (to provide) in any resulting publication:
+```
+To appear.
+```
