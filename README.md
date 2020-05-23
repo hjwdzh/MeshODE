@@ -40,7 +40,7 @@ brew install ceres-solver --HEAD
 ### Build
 ```
 mkdir build
-cmake ..
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j8
 ```
 Note that when torch must be imported before the pyDeform package in Python. i.e.,
