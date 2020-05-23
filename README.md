@@ -1,7 +1,7 @@
 # MeshODE: A Robust and Scalable Framework for Mesh Deformation
 Pairwise shape deformation.
 
-![Plane Fitting Results](https://github.com/hjwdzh/ShapeDeform/raw/master/res/teaser.jpg)
+![Plane Fitting Results](https://github.com/hjwdzh/MeshODE/raw/master/res/teaser.jpg)
 
 ### Dependencies
 1. libIGL
