@@ -105,5 +105,10 @@ python ../src/python/cad_neural_animate.py --source ../data/cad-source.obj --tar
 
 **IMPORTANT**: If you use this code please cite the following (to provide) in any resulting publication:
 ```
-To appear.
+@article{huang2020meshode,
+  title={MeshODE: A Robust and Scalable Framework for Mesh Deformation},
+  author={Huang, Jingwei and Jiang, Chiyu Max and Leng, Baiqiang and Wang, Bin and Guibas, Leonidas},
+  journal={arXiv preprint arXiv:2005.11617},
+  year={2020}
+}
 ```
